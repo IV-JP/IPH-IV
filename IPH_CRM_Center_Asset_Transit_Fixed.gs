@@ -441,13 +441,16 @@ function handleTransitAsset(payload) {
     } else if (status === 'Received') {
       if (currentTransit !== 'In Transit') return json({ status: 'error', message: 'There is no pending transfer for this asset.' });
       if (!isAdmin && !equals(currentTo, ownCode)) return json({ status: 'error', message: 'Only the destination center can confirm receipt.' });
-      write('Location', currentTo); write(statusHeader, previousStatus);
+      // Keep the device-status cell untouched: its dropdown may allow only
+      // specific repair statuses. Transfer state is tracked in Transit Status.
+      write('Location', currentTo);
       write('Transit Status', 'Received'); write('Received Date', transitNow_());
       if (note) write('Transit Remarks', note);
     } else {
       if (currentTransit !== 'In Transit') return json({ status: 'error', message: 'There is no pending transfer to cancel.' });
       if (!isAdmin && !equals(currentFrom, ownCode)) return json({ status: 'error', message: 'Only the source center or Admin can cancel this transfer.' });
-      write('Location', currentFrom); write(statusHeader, previousStatus);
+      // Keep the device-status cell untouched on cancellation as well.
+      write('Location', currentFrom);
       write('Transit Status', 'Cancelled'); write('Received Date', '');
       if (note) write('Transit Remarks', note);
     }
