@@ -1,0 +1,21 @@
+IPH CRM — PBKDF2 5,000 ITERATION VERSION
+
+Files in this package:
+- IPH_CRM_GAS_PBKDF2_5000.gs: optimized Apps Script backend configured for 5,000 PBKDF2-HMAC-SHA256 iterations for newly created/upgraded password hashes.
+- IPH_CRM_No_PIN_Pattern.html: frontend with PIN/pattern lock UI removed.
+
+IMPORTANT SECURITY NOTE
+5,000 iterations will reduce password-verification computation, but it also makes stolen password hashes cheaper to attack. Google Authenticator 2FA is helpful but does not replace strong password hashing.
+
+MIGRATION NOTE
+The backend stores PasswordIterations per account and verifies existing hashes using their stored iteration count. Existing hashes with a recorded iteration count continue to verify with that count, then are upgraded/downgraded to the configured 5,000 count after successful login. If PasswordIterations is blank/missing, this code assumes 60,000 for legacy hashes. Do not manually change existing PasswordHash or PasswordSalt values. If a user's hash was created with a different count but the column is blank, confirm the original count before deploying, or that user's login may fail.
+
+INSTALL
+1. Back up the existing Code.gs and HTML.
+2. Replace Code.gs with IPH_CRM_GAS_PBKDF2_5000.gs and save.
+3. Deploy > Manage deployments > Edit > New version > Deploy.
+4. Keep the deployment URL and ensure the HTML GAS_URL points to it.
+5. Test one account with 2FA disabled and one account with 2FA enabled.
+6. Check Apps Script > Executions for login errors and timing.
+
+This package has not been tested against your live Google Sheet. Test before production rollout.
