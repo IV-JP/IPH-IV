@@ -356,11 +356,113 @@ function handleReadInventory(payload) {
 }
 
 function handleWriteInventory(payload) {
-  const auth = requireSession(payload, ['admin', 'superadmin']);
+  const auth = requireSession(payload);
   if (auth.error) return auth.error;
   if (!Array.isArray(payload.data)) return json({ status: 'error', message: 'Inventory data must be an array.' });
-  writeData(SHEET_NAME, payload.data);
-  return json({ status: 'success', message: 'Inventory synced.' });
+  const role = String(auth.session.role || '').toLowerCase();
+  if (role === 'admin' || role === 'superadmin') {
+    // Preserve existing privileged bulk-sync behavior for Admin/Super Admin.
+    writeData(SHEET_NAME, payload.data);
+    CacheService.getScriptCache().remove('inventory_cache');
+    return json({ status: 'success', message: 'Inventory synced.' });
+  }
+  if (role !== 'center') return json({ status: 'error', message: 'You do not have permission to edit inventory.' });
+  return writeCenterInventoryRows_(auth.session, payload.data);
+}
+
+/**
+ * Center-scoped inventory writer. Centers can add/edit only assets assigned to
+ * their own center. This performs row-level updates/appends and never clears or
+ * rewrites the entire inventory sheet. Transfer fields remain controlled by
+ * handleTransitAsset, not by this general inventory endpoint.
+ */
+function writeCenterInventoryRows_(session, incoming) {
+  const ownCode = String(session.code || session.username || '').trim();
+  if (!ownCode) return json({ status: 'error', message: 'Your center code is missing from the session.' });
+  const equals = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return json({ status: 'error', message: 'Inventory is busy. Please try again.' });
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) throw new Error('No active spreadsheet is available.');
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) throw new Error('Inventory sheet ' + SHEET_NAME + ' was not found.');
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+    if (lastRow < 1 || lastCol < 1) return json({ status: 'error', message: 'Inventory sheet has no header row.' });
+    const headers = sheet.getRange(1, 1, 1, lastCol).getDisplayValues()[0].map(h => String(h || '').trim());
+    const col = name => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+    const locationCol = col('Location');
+    const tagCol = col('Tag ID');
+    const imeiCol = col('IMEI 1') >= 0 ? col('IMEI 1') : col('IMEI');
+    if (locationCol < 0) return json({ status: 'error', message: 'Inventory sheet needs a Location column.' });
+    if (tagCol < 0 && imeiCol < 0) return json({ status: 'error', message: 'Inventory sheet needs Tag ID or IMEI column.' });
+
+    const allRows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, lastCol).getValues() : [];
+    const keyFor = (tag, imei) => (String(tag || '').trim().toLowerCase() ? 'tag:' + String(tag).trim().toLowerCase() : '') || (String(imei || '').trim().toLowerCase() ? 'imei:' + String(imei).trim().toLowerCase() : '');
+    const rowIndexByKey = new Map();
+    allRows.forEach((row, i) => {
+      const key = keyFor(tagCol >= 0 ? row[tagCol] : '', imeiCol >= 0 ? row[imeiCol] : '');
+      if (key && !rowIndexByKey.has(key)) rowIndexByKey.set(key, i + 2);
+    });
+    const blockedHeaders = new Set(['Transit Status','Transit From','Transit To','Transit Date','Transit Previous Status','Received Date','Transit Remarks']);
+    const allowedHeaders = new Set(['S No','Tag ID','Location','Project Name','Model Name','Supplier','IMEI 1','IMEI','Storage','Mobile Color','Color','Device Status','Status','Asset Date','Date of Asset Added','Last Edited By','Last Edited Time']);
+    let updated = 0, added = 0;
+    for (let n = 0; n < incoming.length; n++) {
+      const obj = incoming[n] || {};
+      const rowLocation = String(obj['Location'] ?? obj.location ?? ownCode).trim();
+      if (!equals(rowLocation, ownCode)) {
+        return json({ status: 'error', message: 'Center users can only add or edit assets assigned to their own center (' + ownCode + ').' });
+      }
+      const tag = obj['Tag ID'] ?? obj.tagId ?? '';
+      const imei = obj['IMEI 1'] ?? obj.IMEI ?? obj.imei ?? '';
+      const key = keyFor(tag, imei);
+      if (!key) return json({ status: 'error', message: 'Every asset must have a Tag ID or IMEI.' });
+      const rowNum = rowIndexByKey.get(key);
+      let row;
+      if (rowNum) {
+        row = sheet.getRange(rowNum, 1, 1, lastCol).getValues()[0];
+        if (!equals(row[locationCol], ownCode)) {
+          return json({ status: 'error', message: 'You cannot edit an asset that is not currently assigned to your center.' });
+        }
+      } else {
+        row = new Array(lastCol).fill('');
+        row[locationCol] = ownCode;
+      }
+      Object.keys(obj).forEach(k => {
+        const header = headers.find(h => h.toLowerCase() === String(k).toLowerCase());
+        if (!header || blockedHeaders.has(header) || !allowedHeaders.has(header)) return;
+        const ci = col(header);
+        if (ci < 0) return;
+        if (header.toLowerCase() === 'location') row[ci] = ownCode;
+        else row[ci] = obj[k] == null ? '' : obj[k];
+      });
+      // Keep the location pinned to the authenticated center even if the client is modified.
+      row[locationCol] = ownCode;
+      const editorCol = col('Last Edited By');
+      const timeCol = col('Last Edited Time');
+      if (editorCol >= 0) row[editorCol] = String(session.name || session.username || 'Center User') + ' (' + ownCode + ')';
+      if (timeCol >= 0) row[timeCol] = transitNow_();
+      if (rowNum) {
+        sheet.getRange(rowNum, 1, 1, lastCol).setValues([row]);
+        updated++;
+      } else {
+        sheet.appendRow(row);
+        added++;
+        const insertedRow = sheet.getLastRow();
+        rowIndexByKey.set(key, insertedRow);
+      }
+    }
+    SpreadsheetApp.flush();
+    CacheService.getScriptCache().remove('inventory_cache');
+    return json({ status: 'success', message: 'Center inventory synced.', updated: updated, added: added });
+  } catch (err) {
+    const message = err && err.message ? String(err.message) : String(err);
+    console.error('center inventory write failed: ' + message + '\n' + (err && err.stack ? err.stack : 'No stack available'));
+    return json({ status: 'error', message: 'Center inventory save failed: ' + message });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 
