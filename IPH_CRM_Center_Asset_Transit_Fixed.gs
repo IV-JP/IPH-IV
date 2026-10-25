@@ -390,8 +390,11 @@ function handleTransitAsset(payload) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) return json({ status: 'error', message: 'Asset records are busy. Try again shortly.' });
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (!sheet || sheet.getLastRow() < 2) return json({ status: 'error', message: 'Inventory sheet has no asset rows.' });
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) throw new Error('No active spreadsheet. Ensure this Apps Script project is bound to the CRM Google Sheet.');
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) throw new Error('Inventory sheet ' + SHEET_NAME + ' was not found. Check the sheet tab name.');
+    if (sheet.getLastRow() < 2) return json({ status: 'error', message: 'Inventory sheet has no asset rows.' });
     const requiredTransitHeaders = ['Transit Status', 'Transit From', 'Transit To', 'Transit Date', 'Transit Previous Status', 'Received Date', 'Transit Remarks', 'Last Edited By', 'Last Edited Time'];
     let headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getDisplayValues()[0].map(h => String(h || '').trim());
     let headersChanged = false;
@@ -403,7 +406,8 @@ function handleTransitAsset(payload) {
     const tagCol = col('Tag ID');
     const imeiCol = col('IMEI 1') >= 0 ? col('IMEI 1') : col('IMEI');
     const locCol = col('Location');
-    const statusCol = col('Device Status') >= 0 ? col('Device Status') : col('Status');
+    const statusHeader = col('Device Status') >= 0 ? 'Device Status' : 'Status';
+    const statusCol = col(statusHeader);
     if (locCol < 0 || statusCol < 0) return json({ status: 'error', message: 'Inventory sheet needs Location and Device Status columns.' });
     const matches = [];
     for (let i = 1; i < values.length; i++) {
@@ -432,17 +436,18 @@ function handleTransitAsset(payload) {
       write('Transit Previous Status', read('Device Status') || read('Status') || 'Active');
       write('Transit From', from); write('Transit To', to); write('Transit Status', 'In Transit');
       write('Transit Date', transitNow_()); write('Received Date', ''); write('Transit Remarks', note);
-      write(statusCol === col('Device Status') ? 'Device Status' : 'Status', 'In Transit');
+      // Do not overwrite the device-status field with 'In Transit'.
+      // Transit state belongs only in the dedicated Transit Status column.
     } else if (status === 'Received') {
       if (currentTransit !== 'In Transit') return json({ status: 'error', message: 'There is no pending transfer for this asset.' });
       if (!isAdmin && !equals(currentTo, ownCode)) return json({ status: 'error', message: 'Only the destination center can confirm receipt.' });
-      write('Location', currentTo); write('Device Status', previousStatus); write('Status', previousStatus);
+      write('Location', currentTo); write(statusHeader, previousStatus);
       write('Transit Status', 'Received'); write('Received Date', transitNow_());
       if (note) write('Transit Remarks', note);
     } else {
       if (currentTransit !== 'In Transit') return json({ status: 'error', message: 'There is no pending transfer to cancel.' });
       if (!isAdmin && !equals(currentFrom, ownCode)) return json({ status: 'error', message: 'Only the source center or Admin can cancel this transfer.' });
-      write('Location', currentFrom); write('Device Status', previousStatus); write('Status', previousStatus);
+      write('Location', currentFrom); write(statusHeader, previousStatus);
       write('Transit Status', 'Cancelled'); write('Received Date', '');
       if (note) write('Transit Remarks', note);
     }
@@ -451,6 +456,10 @@ function handleTransitAsset(payload) {
     SpreadsheetApp.flush();
     CacheService.getScriptCache().remove('inventory_cache');
     return json({ status: 'success', message: 'Transfer updated successfully.' });
+  } catch (err) {
+    const message = err && err.message ? String(err.message) : String(err);
+    console.error('transit_asset failed: ' + message + '\n' + (err && err.stack ? err.stack : 'No stack available'));
+    return json({ status: 'error', message: 'Asset transfer failed: ' + message });
   } finally {
     lock.releaseLock();
   }
