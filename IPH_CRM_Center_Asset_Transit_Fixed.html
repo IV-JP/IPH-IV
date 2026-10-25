@@ -1,0 +1,2569 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPH CRM INDIVILLAGE | Enterprise Asset Platform</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js & Datalabels -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- SheetJS for Excel Import/Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- HTML2PDF for Dashboard Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- QRCode.js for Asset Labels -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'] },
+                    colors: { primary: '#6366f1', secondary: '#14b8a6', dark: '#0f172a', dark_card: '#1e293b' }
+                }
+            }
+        };
+    </script>
+    <style>
+        /* iOS Glassmorphic Theme Overrides */
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background-color: #000000; 
+            color: #f8fafc; 
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.2), transparent 30%),
+                radial-gradient(circle at 85% 30%, rgba(20, 184, 166, 0.2), transparent 30%),
+                radial-gradient(circle at 50% 100%, rgba(225, 29, 72, 0.15), transparent 40%);
+            background-attachment: fixed;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+        
+        .nav-item.active { 
+            background-color: rgba(255, 255, 255, 0.15); 
+            color: #ffffff; 
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .glass-panel { 
+            background: rgba(30, 30, 40, 0.45) !important; 
+            backdrop-filter: saturate(180%) blur(24px) !important; 
+            -webkit-backdrop-filter: saturate(180%) blur(24px) !important; 
+            border: 1px solid rgba(255, 255, 255, 0.12) !important; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Force transparent backgrounds on layout wrappers */
+        #loginScreen, #appContainer, main, aside, .view-section, .bg-\[\#0b1120\] {
+            background: transparent !important;
+        }
+        
+        /* Smooth frosted inputs and tables */
+        input, select, .bg-slate-900, .bg-slate-800, .bg-slate-800\/80, thead {
+            background: rgba(20, 20, 30, 0.4) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        /* Drag and Drop Zone Styles */
+        .drop-zone { border: 2px dashed rgba(255,255,255,0.2); transition: all 0.3s ease; }
+        .drop-zone.dragover { border-color: #6366f1; background-color: rgba(99, 102, 241, 0.2); }
+    </style>
+</head>
+<body class="h-screen w-full overflow-hidden flex flex-col md:flex-row antialiased">
+    <!-- 1. LOGIN SCREEN -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-4">
+        <div class="glass-panel p-10 rounded-3xl w-full max-w-md relative overflow-hidden">
+            <!-- Decorative blur -->
+            <div class="absolute top-0 left-0 w-full h-32 bg-primary/20 blur-[50px] -z-10 rounded-full transform -translate-y-1/2"></div>
+            
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-primary to-indigo-700 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg shadow-primary/30">
+                    <i class="fas fa-satellite-dish"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">IPH CRM INDIVILLAGE</h1>
+                <p class="text-slate-400 text-sm mt-2">Mobile Device Asset Inventory</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Username / Center Code</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="text" id="username" required placeholder="admin or YGR, RCR..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Password</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="password" id="password" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                    </div>
+                </div>
+                <button type="submit" id="loginBtn" class="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-500 hover:to-primary text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/30 transition-all flex justify-center items-center gap-2 mt-4">
+                    <span>Secure Access</span> <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+            
+            <div class="mt-8 pt-6 border-t border-slate-700/50 text-center text-xs text-slate-500">
+                Sign in with your authorized CRM account. Admin credentials are not displayed here.
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APP CONTAINER -->
+    <div id="appContainer" class="flex h-full w-full hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-64 glass-panel border-r border-slate-800 flex flex-col hidden md:flex h-full flex-shrink-0 z-20">
+            <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-primary to-indigo-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/30">
+                    <i class="fas fa-satellite-dish"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-white tracking-tight">IPH CRM</h2>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold" id="sidebarRoleLabel">Admin</p>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-4">Main Menu</p>
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all text-left">
+                    <i class="fas fa-chart-pie w-5 text-center"></i> Dashboard
+                </button>
+                <button onclick="switchView('inventory')" id="nav-inventory" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all text-left">
+                    <i class="fas fa-boxes w-5 text-center"></i> Master Inventory
+                </button>
+                <button onclick="switchView('redundancy')" id="nav-redundancy" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all text-left">
+                    <i class="fas fa-clone w-5 text-center"></i> Redundancy Filter
+                </button>
+                <button onclick="switchView('transit')" id="nav-transit" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all text-left">
+                    <i class="fas fa-truck-moving w-5 text-center"></i> Asset Transit
+                </button>
+                <button onclick="switchView('integrations')" id="nav-integrations" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all text-left">
+                    <i class="fas fa-plug w-5 text-center"></i> Integration Hub
+                </button>
+                <button onclick="switchView('centers')" id="nav-centers" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all text-left">
+                    <i class="fas fa-building w-5 text-center"></i> Center Management
+                </button>
+                <button onclick="switchView('center-stats')" id="nav-center-stats" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all text-left">
+                    <i class="fas fa-chart-bar w-5 text-center"></i> Center Analytics
+                </button>
+            </nav>
+            
+            <div class="p-4 border-t border-slate-800">
+                <div class="flex items-center gap-3 mb-4 px-2 bg-slate-800/50 p-3 rounded-xl">
+                    <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">
+                        <i class="fas fa-user-astronaut"></i>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-sm font-bold text-white truncate" id="currentUserDisplay">Admin User</p>
+                        <p class="text-xs text-secondary truncate font-medium" id="currentLocationDisplay">Global View</p>
+                    </div>
+                </div>
+                <button onclick="openSecuritySettings()" class="w-full mb-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30 transition-all">
+                    <i class="fas fa-shield-halved"></i> Security Settings
+                </button>
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/20 transition-all shadow-sm">
+                    <i class="fas fa-sign-out-alt"></i> Terminate Session
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+            
+            <!-- Mobile Header -->
+            <header class="md:hidden glass-panel p-4 flex items-center justify-between border-b border-slate-800 z-20">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-satellite-dish text-primary"></i>
+                    <span class="font-bold text-white">IPH CRM</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openSecuritySettings()" class="text-indigo-200 p-2 focus:outline-none" aria-label="Security settings"><i class="fas fa-shield-halved text-lg"></i></button>
+                    <button onclick="toggleMobileMenu()" class="text-slate-300 p-2 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- SCROLLABLE VIEWS -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth" id="mainScrollArea">
+                
+                <!-- 1. DASHBOARD VIEW -->
+                <div id="view-dashboard" class="view-section">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                        <div>
+                            <h1 class="text-3xl font-bold text-white tracking-tight">Analytics Dashboard</h1>
+                            <p class="text-slate-400 text-sm mt-1" id="dashboardSubtitle">Real-time overview of IT asset infrastructure</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="exportDashboardPDF()" class="bg-slate-800/80 hover:bg-slate-700 px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 flex items-center gap-2 text-white transition-colors shadow-sm">
+                                <i class="fas fa-file-pdf text-rose-400"></i> Export PDF Report
+                            </button>
+                            <div class="bg-slate-800/80 px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 flex items-center gap-2 text-slate-300">
+                                <i class="fas fa-clock text-primary"></i> Last synced: <span id="lastSyncTime">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Cards Row 1 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                        <div onclick="jumpToInventory('', '', '')" class="glass-panel p-5 rounded-2xl border border-slate-700 relative overflow-hidden group hover:border-primary/50 transition-colors cursor-pointer">
+                            <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-500/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Devices</p>
+                                    <h3 class="text-3xl font-black text-white mt-1" id="kpi-total">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center"><i class="fas fa-server"></i></div>
+                            </div>
+                        </div>
+                        <div onclick="jumpToInventory('Active', '', '')" class="glass-panel p-5 rounded-2xl border border-slate-700 relative overflow-hidden group hover:border-emerald-500/50 transition-colors cursor-pointer">
+                            <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active</p>
+                                    <h3 class="text-3xl font-black text-emerald-400 mt-1" id="kpi-active">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><i class="fas fa-check-circle"></i></div>
+                            </div>
+                        </div>
+                        <div onclick="jumpToInventory('Faulty', '', '')" class="glass-panel p-5 rounded-2xl border border-slate-700 relative overflow-hidden group hover:border-rose-500/50 transition-colors cursor-pointer">
+                            <div class="absolute -right-4 -top-4 w-16 h-16 bg-rose-500/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Faulty/Damaged</p>
+                                    <h3 class="text-3xl font-black text-rose-400 mt-1" id="kpi-faulty">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center"><i class="fas fa-tools"></i></div>
+                            </div>
+                        </div>
+                        <div onclick="jumpToInventory('', '', 'Pro')" class="glass-panel p-5 rounded-2xl border border-slate-700 relative overflow-hidden group hover:border-purple-500/50 transition-colors cursor-pointer">
+                            <div class="flex justify-between items-start relative z-10">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pro Models</p>
+                                    <h3 class="text-3xl font-black text-purple-400 mt-1" id="kpi-pro">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center"><i class="fas fa-star"></i></div>
+                            </div>
+                        </div>
+                        <div onclick="jumpToInventory('', '', 'non-pro')" class="glass-panel p-5 rounded-2xl border border-slate-700 relative overflow-hidden group hover:border-slate-400/50 transition-colors cursor-pointer">
+                            <div class="flex justify-between items-start relative z-10">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Non-Pro Models</p>
+                                    <h3 class="text-3xl font-black text-slate-300 mt-1" id="kpi-nonpro">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-slate-700 text-slate-300 flex items-center justify-center"><i class="fas fa-mobile"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="glass-panel p-6 rounded-2xl border border-slate-700 flex flex-col shadow-xl">
+                            <h3 class="text-base font-bold text-white mb-6 flex items-center gap-2"><i class="fas fa-map-marker-alt text-primary"></i> <span id="barChartTitle">Center-Wise Distribution</span></h3>
+                            <div class="flex-1 relative min-h-[300px] w-full">
+                                <canvas id="centerChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl border border-slate-700 flex flex-col shadow-xl">
+                            <h3 class="text-base font-bold text-white mb-6 flex items-center gap-2"><i class="fas fa-apple-alt text-primary"></i> Model Distribution</h3>
+                            <div class="flex-1 relative min-h-[300px] w-full flex justify-center">
+                                <canvas id="modelChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. INVENTORY CRUD VIEW -->
+                <div id="view-inventory" class="view-section hidden flex flex-col h-full min-h-[calc(100vh-6rem)]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-3xl font-bold text-white tracking-tight">Master Inventory</h1>
+                            <p class="text-slate-400 text-sm mt-1">Search, modify, and track all mobile assets.</p>
+                        </div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <!-- Bulk Actions Container -->
+                            <div id="bulkActions" class="hidden items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 shadow-md">
+                                <span class="text-xs font-bold text-slate-400 mr-2"><span id="selectedCount">0</span> selected:</span>
+                                <button onclick="bulkUpdateStatus('Active')" class="text-xs font-bold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white px-3 py-1.5 rounded-lg transition-colors">Set Active</button>
+                                <button onclick="bulkUpdateStatus('Faulty')" class="text-xs font-bold bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white px-3 py-1.5 rounded-lg transition-colors">Set Faulty</button>
+                                <button onclick="bulkDelete()" class="text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg transition-colors"><i class="fas fa-trash"></i> Delete</button>
+                            </div>
+
+                            <button onclick="openDeviceModal()" class="bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-500 hover:to-primary text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/30 flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95">
+                                <i class="fas fa-plus"></i> Add New Device
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-2xl border border-slate-700 overflow-hidden flex flex-col flex-1 shadow-2xl">
+                        <!-- Toolbar -->
+                        <div class="p-4 border-b border-slate-700 bg-slate-800/80 flex flex-col sm:flex-row gap-4 items-center">
+                            <div class="relative w-full sm:w-1/3">
+                                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search IMEI, Tag ID, Model..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all">
+                            </div>
+                            
+                            <div class="flex flex-wrap w-full gap-3 items-center">
+                                <label class="text-xs text-slate-400">Asset date from <input type="date" id="filterDateFrom" onchange="renderTable()" class="ml-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-white"></label>
+                                <label class="text-xs text-slate-400">to <input type="date" id="filterDateTo" onchange="renderTable()" class="ml-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-white"></label>
+                                <div class="flex w-full sm:w-auto gap-3 ml-auto">
+                                <select id="filterStatus" onchange="renderTable()" class="bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-4 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+                                    <option value="">All Statuses</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Faulty">Faulty</option>
+                                </select>
+                                <select id="filterCenter" onchange="renderTable()" class="bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-4 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer hidden">
+                                    <!-- Populated dynamically if admin -->
+                                </select>
+                                </div>
+                            </div>
+                            <div class="px-4 py-3 border-b border-slate-700 bg-slate-900/60 flex flex-wrap items-center gap-3">
+                                <span class="text-xs text-slate-400">Barcode selected assets (Tag ID, IMEI and Asset ID)</span>
+                                <label class="text-xs text-slate-300">Width (mm) <input id="barcodeWidth" type="number" min="25" max="100" value="50" class="ml-1 w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
+                                <label class="text-xs text-slate-300">Height (mm) <input id="barcodeHeight" type="number" min="15" max="80" value="30" class="ml-1 w-20 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
+                                <button onclick="generateSelectedBarcodes()" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg"><i class="fas fa-barcode mr-1"></i> Generate Selected</button>
+                                <button onclick="generateFilteredBarcodes()" class="text-xs font-bold bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg">Generate All Filtered</button>
+                            </div>
+                        </div>
+
+                        <!-- Table Wrapper -->
+                        <div class="flex-1 overflow-auto bg-[#0b1120]/50 relative">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-slate-900 text-slate-400 sticky top-0 z-10 shadow-md">
+                                    <tr>
+                                        <!-- Bulk Checkbox Header -->
+                                        <th class="py-4 px-4 w-10 text-center">
+                                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes()" class="w-4 h-4 rounded border-slate-600 bg-slate-800 cursor-pointer accent-primary">
+                                        </th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest cursor-pointer hover:text-white" onclick="sortTable('sNo')">S No <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Tag ID</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Center</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Asset Date</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Model Name</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Project</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">IMEI</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Status</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryTableBody" class="divide-y divide-slate-800/60">
+                                    <!-- Rows rendered via JS -->
+                                </tbody>
+                            </table>
+                            
+                            <!-- Empty State -->
+                            <div id="emptyState" class="hidden absolute inset-0 flex-col items-center justify-center text-slate-500 bg-[#0b1120]/80 backdrop-blur-sm z-0">
+                                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fas fa-box-open text-3xl"></i>
+                                </div>
+                                <h3 class="text-white font-bold text-lg">No Devices Found</h3>
+                                <p class="text-sm mt-1">Try adjusting your search or filters.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="p-3 border-t border-slate-700 bg-slate-900 text-xs font-semibold text-slate-400 flex justify-between items-center">
+                            <span id="recordCountDisplay" class="bg-slate-800 px-3 py-1 rounded-full">Showing 0 records</span>
+                            <span class="text-[10px] uppercase tracking-widest flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Connected</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ADMIN ONLY: REDUNDANCY FILTER -->
+                <div id="view-redundancy" class="view-section hidden flex-col h-full min-h-[calc(100vh-6rem)]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-3xl font-bold text-white tracking-tight">Redundancy Filter</h1>
+                            <p class="text-slate-400 text-sm mt-1">Find possible duplicate inventory records by Tag ID or IMEI. Review records before editing or deleting.</p>
+                        </div>
+                        <button onclick="renderRedundancy()" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-primary hover:bg-indigo-500 text-white"><i class="fas fa-sync-alt mr-2"></i>Refresh Scan</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                        <div class="glass-panel rounded-2xl p-5"><p class="text-xs uppercase tracking-wider text-slate-400">Duplicate Groups</p><p id="redundancyGroups" class="text-3xl font-black text-amber-400 mt-2">0</p></div>
+                        <div class="glass-panel rounded-2xl p-5"><p class="text-xs uppercase tracking-wider text-slate-400">Flagged Records</p><p id="redundancyRecords" class="text-3xl font-black text-rose-400 mt-2">0</p></div>
+                        <div class="glass-panel rounded-2xl p-5"><p class="text-xs uppercase tracking-wider text-slate-400">Unique Records</p><p id="redundancyUnique" class="text-3xl font-black text-emerald-400 mt-2">0</p></div>
+                    </div>
+                    <div class="glass-panel rounded-2xl overflow-hidden flex flex-col flex-1 shadow-2xl">
+                        <div class="p-4 border-b border-slate-700 flex flex-col lg:flex-row gap-3">
+                            <input id="redundancySearch" oninput="renderRedundancy()" type="text" placeholder="Search Tag ID, IMEI, model..." class="flex-1 rounded-xl py-2.5 px-4 text-sm text-white">
+                            <select id="redundancyType" onchange="renderRedundancy()" class="rounded-xl py-2.5 px-4 text-sm text-white">
+                                <option value="all">All duplicate types</option><option value="tagId">Duplicate Tag ID</option><option value="imei">Duplicate IMEI</option>
+                            </select>
+                            <select id="redundancyCenter" onchange="renderRedundancy()" class="rounded-xl py-2.5 px-4 text-sm text-white"><option value="">All Centers</option></select>
+                        </div>
+                        <div class="overflow-auto flex-1">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="sticky top-0 z-10 text-slate-400 bg-slate-900"><tr>
+                                    <th class="py-3 px-4">Issue</th><th class="py-3 px-4">Duplicate Value</th><th class="py-3 px-4">Tag ID</th><th class="py-3 px-4">Center</th><th class="py-3 px-4">Model</th><th class="py-3 px-4">IMEI</th><th class="py-3 px-4">Status</th><th class="py-3 px-4">Action</th>
+                                </tr></thead>
+                                <tbody id="redundancyTableBody" class="divide-y divide-slate-800/60"></tbody>
+                            </table>
+                            <div id="redundancyEmpty" class="hidden p-10 text-center text-slate-400">No duplicate records found for the selected filters.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ASSET TRANSIT / INTER-CENTER TRANSFER VIEW -->
+                <div id="view-transit" class="view-section hidden flex-col h-full min-h-[calc(100vh-6rem)]">
+                    <div class="mb-6">
+                        <h1 class="text-3xl font-bold text-white tracking-tight">Asset Transit</h1>
+                        <p class="text-slate-400 text-sm mt-1">Transfer assets between centers. The receiving center confirms delivery; the asset then moves to the destination center automatically.</p>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-5 mb-6">
+                        <h2 class="text-lg font-bold text-white mb-4"><i class="fas fa-exchange-alt text-primary mr-2"></i>Create / Update Transfer</h2>
+                        <form id="transitForm" onsubmit="saveTransit(event)" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Search &amp; Select Asset (all eligible assets)</label><input id="transitAssetSearch" type="search" oninput="refreshTransitAssets()" placeholder="Search Tag ID, IMEI, model or Asset ID..." autocomplete="off" class="w-full rounded-xl py-2.5 px-3 mb-2 text-sm text-white"><select id="transitAsset" required class="w-full rounded-xl py-2.5 px-3 text-sm text-white"><option value="">Search and select an asset...</option></select><p id="transitAssetMatchCount" class="text-xs text-slate-400 mt-1">Choose an asset to mark it for transfer.</p></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">From Center</label><select id="transitFrom" required onchange="refreshTransitAssets()" class="w-full rounded-xl py-2.5 px-3 text-sm text-white"></select></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">To Center</label><select id="transitTo" required class="w-full rounded-xl py-2.5 px-3 text-sm text-white"></select></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Transit Status</label><select id="transitStatus" required class="w-full rounded-xl py-2.5 px-3 text-sm text-white"><option value="In Transit">In Transit</option><option value="Received">Received</option><option value="Cancelled">Cancelled</option></select></div>
+                            <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Remarks / Handover Reference</label><input id="transitNote" type="text" placeholder="Courier, handover note, approval reference..." class="w-full rounded-xl py-2.5 px-3 text-sm text-white"></div>
+                            <div class="flex items-end"><button type="submit" class="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-500 text-white font-bold py-2.5 rounded-xl"><i class="fas fa-save mr-2"></i>Save Transfer</button></div>
+                        </form>
+                        <p class="text-xs text-amber-300 mt-3"><i class="fas fa-info-circle mr-1"></i>Only the destination center (or Admin) can mark a transfer as Received. Receipt updates the asset's center; it does not delete the asset record.</p>
+                    </div>
+                    <div class="glass-panel rounded-2xl overflow-hidden flex flex-col flex-1 shadow-2xl">
+                        <div class="p-4 border-b border-slate-700 flex flex-col md:flex-row gap-3"><div class="relative flex-1"><i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i><input id="transitSearch" oninput="renderTransitTable()" placeholder="Search all transit records: Tag ID, IMEI, Asset ID, model, project, center, status, remarks, date..." class="w-full rounded-xl py-2.5 pl-10 pr-4 text-sm text-white"></div><select id="transitFilterStatus" onchange="renderTransitTable()" class="rounded-xl py-2.5 px-4 text-sm text-white"><option value="">All Transit Statuses</option><option>In Transit</option><option>Received</option><option>Cancelled</option></select><select id="transitFilterCenter" onchange="renderTransitTable()" class="rounded-xl py-2.5 px-4 text-sm text-white"><option value="">All Centers</option></select></div><div class="px-4 py-3 border-b border-slate-700 flex flex-wrap items-center gap-3"><label class="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" id="transitSelectAll" onchange="toggleAllTransitRows(this.checked)" class="w-4 h-4 accent-indigo-500"> Select all filtered</label><span class="text-xs text-slate-400"><strong id="transitSelectedCount">0</strong> selected</span><button type="button" onclick="clearTransitSelection()" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white">Clear selection</button><span class="text-xs text-slate-500">Select rows to mark them for review; selection does not change transfer status.</span></div>
+                        <div class="overflow-auto"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="sticky top-0 bg-slate-900 text-slate-400"><tr><th class="py-3 px-4"><input type="checkbox" aria-label="Select all filtered transit rows" onchange="toggleAllTransitRows(this.checked)" id="transitHeaderSelectAll" class="w-4 h-4 accent-indigo-500"></th><th class="py-3 px-4">Tag ID</th><th class="py-3 px-4">Asset ID</th><th class="py-3 px-4">IMEI</th><th class="py-3 px-4">From</th><th class="py-3 px-4">To</th><th class="py-3 px-4">Transit Status</th><th class="py-3 px-4">Transit Date &amp; Time</th><th class="py-3 px-4">Received Date &amp; Time</th><th class="py-3 px-4">Remarks</th><th class="py-3 px-4">Action</th></tr></thead><tbody id="transitTableBody" class="divide-y divide-slate-800/60"></tbody></table><div id="transitEmpty" class="hidden p-8 text-center text-slate-400">No transfer records match these filters.</div></div>
+                    </div>
+                </div>
+
+                <!-- 2.5 CENTER MANAGEMENT VIEW (ADMIN ONLY) -->
+                <div id="view-centers" class="view-section hidden flex-col h-full min-h-[calc(100vh-6rem)]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-3xl font-bold text-white tracking-tight">Center Management</h1>
+                            <p class="text-slate-400 text-sm mt-1">Add, edit, or remove regional centers and access credentials.</p>
+                        </div>
+                        <button onclick="openCenterModal()" class="bg-gradient-to-r from-secondary to-teal-600 hover:from-teal-500 hover:to-secondary text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-secondary/30 flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95">
+                            <i class="fas fa-plus"></i> Add New Center
+                        </button>
+                    </div>
+
+                    <div class="glass-panel rounded-2xl border border-slate-700 overflow-hidden flex flex-col flex-1 shadow-2xl">
+                        <div class="p-4 border-b border-slate-700"><div class="relative max-w-xl"><i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i><input id="centerSearch" type="search" oninput="renderCentersTable()" placeholder="Search centers instantly by code or name..." class="w-full rounded-xl py-2.5 pl-10 pr-4 text-sm text-white"></div></div>
+                        <div class="flex-1 overflow-auto bg-[#0b1120]/50 relative">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-slate-900 text-slate-400 sticky top-0 z-10 shadow-md">
+                                    <tr>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Center Code</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Center Name</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Login Password</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="centersTableBody" class="divide-y divide-slate-800/60">
+                                    <!-- Rows rendered via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2.6 CENTER ANALYTICS VIEW (ADMIN ONLY) -->
+                <div id="view-center-stats" class="view-section hidden flex-col h-full min-h-[calc(100vh-6rem)]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-3xl font-bold text-white tracking-tight">Center Analytics (Admin)</h1>
+                            <p class="text-slate-400 text-sm mt-1">Live active, faulty, and total device counts across all regional centers.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-2xl border border-slate-700 overflow-hidden flex flex-col flex-1 shadow-2xl">
+                        <div class="p-4 border-b border-slate-700"><div class="relative max-w-xl"><i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i><input id="centerStatsSearch" type="search" oninput="renderCenterStats()" placeholder="Search analytics by center code, name or count..." class="w-full rounded-xl py-2.5 pl-10 pr-4 text-sm text-white"></div></div>
+                        <div class="flex-1 overflow-auto bg-[#0b1120]/50 relative">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-slate-900 text-slate-400 sticky top-0 z-10 shadow-md">
+                                    <tr>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Center Code</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest">Center Name</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest text-blue-400">Total Devices</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest text-emerald-400">Active Count</th>
+                                        <th class="py-4 px-5 font-bold uppercase text-[10px] tracking-widest text-rose-400">Damage/Faulty Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="centerStatsTableBody" class="divide-y divide-slate-800/60">
+                                    <!-- Rows rendered via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. INTEGRATION HUB VIEW -->
+                <div id="view-integrations" class="view-section hidden">
+                    <h1 class="text-3xl font-bold text-white tracking-tight mb-1">Integration Hub</h1>
+                    <p id="integrationSubtitle" class="text-slate-400 text-sm mb-8">Import/export Excel files and synchronize with Google Sheets.</p>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        
+                        <!-- Panel A: Google Apps Script API -->
+                        <div id="integrationSyncPanel" class="glass-panel p-8 rounded-2xl border border-slate-700 shadow-xl flex flex-col">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center text-xl">
+                                    <i class="fab fa-google"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-bold text-white">Google Sheets Sync</h2>
+                                    <p class="text-xs text-slate-400 mt-1">Cloud synchronization via Apps Script Web App</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-5 flex-1">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Web App URL Endpoint</label>
+                                    <div class="flex gap-2">
+                                        <input type="url" id="gasUrlInput" readonly value="https://script.google.com/macros/s/AKfycbzgHPKEZS2aef-EtiI0Gb_WideYUcC5ae1pisdyZ7xbgHGDX7xOTMYsoHaAEm6VOO6AdQ/exec" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-sm text-slate-400 focus:outline-none font-mono cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4 mt-6">
+                                    <button onclick="pullFromGAS()" class="bg-slate-800 hover:bg-blue-600 text-white font-bold py-5 rounded-xl border border-slate-700 transition-all flex flex-col items-center justify-center gap-2 group">
+                                        <i class="fas fa-cloud-download-alt text-2xl text-slate-400 group-hover:text-white transition-colors"></i>
+                                        <span>Fetch Data</span>
+                                    </button>
+                                    <button onclick="pushToGAS()" class="bg-slate-800 hover:bg-primary text-white font-bold py-5 rounded-xl border border-slate-700 transition-all flex flex-col items-center justify-center gap-2 group">
+                                        <i class="fas fa-cloud-upload-alt text-2xl text-slate-400 group-hover:text-white transition-colors"></i>
+                                        <span>Push/Sync Data</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Console Log -->
+                                <div class="bg-black/60 rounded-xl p-4 text-[11px] font-mono text-emerald-400 overflow-hidden h-32 overflow-y-auto mt-4 border border-slate-800 shadow-inner leading-relaxed" id="syncConsole">
+                                    [SYSTEM] Integration Hub Initialized.<br>
+                                    [SYSTEM] Ready for operations.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel B: Excel File Operations -->
+                        <div class="glass-panel p-8 rounded-2xl border border-slate-700 shadow-xl flex flex-col">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-xl">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <div>
+                                    <h2 id="excelPanelTitle" class="text-xl font-bold text-white">Excel Import / Export</h2>
+                                    <p class="text-xs text-slate-400 mt-1">Operates locally via SheetJS in browser</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Drag & Drop Zone -->
+                            <div id="dropZone" class="drop-zone flex-1 rounded-xl flex flex-col items-center justify-center p-8 mb-6 cursor-pointer bg-slate-900/50 hover:bg-slate-800/50">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                                <p class="text-white font-medium text-center">Drag & Drop <br><span class="text-primary">'All-In-One_Mobile Device_Inventory_2.xlsx'</span></p>
+                                <p class="text-xs text-slate-400 mt-2 text-center">or click to browse local files</p>
+                                <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv">
+                            </div>
+                            
+                            <button onclick="exportToExcel()" class="w-full bg-slate-800 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2">
+                                <i class="fas fa-download"></i> Download Export as .xlsx
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+            <!-- ABOUT / DEVELOPER INFO FOOTER -->
+                            <footer id="aboutDeveloper" class="shrink-0 px-4 md:px-8 pt-2 pb-3 border-t border-white/10 bg-[#0b1120]">
+                                <div id="developerInfo" class="glass-panel rounded-xl px-4 py-2 flex flex-nowrap items-center justify-center gap-x-5 text-center whitespace-nowrap overflow-x-auto">
+                                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-300">
+                                        <i class="fas fa-circle-info text-primary"></i> About / Developer Info
+                                    </span>
+                                    <span class="inline-flex items-center gap-2 text-sm font-bold text-white">
+                                        <i class="fas fa-code text-indigo-400"></i> Developed by Prasad J
+                                    </span>
+                                    <span class="text-sm text-slate-400">IPH CRM INDIVILLAGE · Mobile Device Asset Platform</span>
+                                    <a href="mailto:prasad.j@gmail.co" class="inline-flex items-center gap-2 text-sm font-bold text-indigo-300 hover:text-indigo-200 underline underline-offset-4">
+                                        <i class="fas fa-envelope"></i> prasad.j@indivillage.co
+                                    </a>
+                                </div>
+                            </footer>
+        </main>
+    </div>
+
+    <!-- QR CODE GENERATOR MODAL -->
+    <div id="qrModal" class="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center transform scale-95 transition-transform duration-200" id="qrModalContent">
+            <h3 class="text-xl font-bold text-white mb-2"><i class="fas fa-qrcode text-primary"></i> Asset QR Code</h3>
+            <p class="text-sm text-slate-400 mb-6" id="qrSubtitle">IV-YGR-IPH-001</p>
+            
+            <div class="bg-white p-4 rounded-xl inline-block mb-6 shadow-inner mx-auto" id="qrcodeContainer"></div>
+            
+            <div class="flex justify-center gap-3">
+                <button onclick="closeQRModal()" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-700 transition-colors border border-slate-600">Close</button>
+                <button onclick="printQR()" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-primary hover:bg-indigo-500 text-white shadow-lg transition-all flex items-center gap-2">
+                    <i class="fas fa-print"></i> Print Label
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT DEVICE MODAL -->
+    <div id="deviceModal" class="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="modalContent">
+            
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2" id="modalTitle"><i class="fas fa-edit text-primary"></i> Add New Asset</h3>
+                <button onclick="closeDeviceModal()" class="text-slate-400 hover:text-white hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="deviceForm" onsubmit="saveDevice(event)" class="p-6">
+                <input type="hidden" id="deviceId">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">S No.</label>
+                        <input type="number" id="sNo" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tag ID</label>
+                        <input type="text" id="tagId" required placeholder="IV-RCR-IPH-001" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Center Location</label>
+                        <select id="location" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none">
+                            <!-- Populated dynamically via JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Project Name</label>
+                        <input type="text" id="projectName" required placeholder="e.g., Mecka, Trace" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Model Name</label>
+                        <input type="text" id="modelName" required placeholder="iPhone 13, iPhone 14 Pro..." class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Supplier</label>
+                        <input type="text" id="supplier" placeholder="Ovantica, Grest..." class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">IMEI Number</label>
+                        <input type="text" id="imei" required placeholder="3509204..." class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono text-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Status</label>
+                        <select id="status" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none">
+                            <option value="Active">Active</option>
+                            <option value="Faulty">Faulty</option>
+                            <option value="In Repair">In Repair</option>
+                            <option value="Missing">Missing</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Storage</label>
+                        <input type="text" id="storage" placeholder="128 GB, 256 GB" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mobile Color</label>
+                        <input type="text" id="color" placeholder="Blue, Graphite..." class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                </div>
+                
+                <div class="pt-6 flex justify-end gap-3 border-t border-slate-700/80">
+                    <button type="button" onclick="closeDeviceModal()" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-700 transition-colors">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-primary hover:bg-indigo-500 text-white shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
+                        <i class="fas fa-save"></i> Save Asset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT CENTER MODAL -->
+    <div id="centerModal" class="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="centerModalContent">
+            
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2" id="centerModalTitle"><i class="fas fa-building text-secondary"></i> Add New Center</h3>
+                <button onclick="closeCenterModal()" class="text-slate-400 hover:text-white hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="centerForm" onsubmit="saveCenter(event)" class="p-6">
+                <input type="hidden" id="editCenterId">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Center Code (Unique)</label>
+                        <input type="text" id="centerCode" required placeholder="e.g., NEW" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Center Name</label>
+                        <input type="text" id="centerName" required placeholder="e.g., New City" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Login Password</label>
+                        <input type="password" id="centerPassword" required minlength="8" autocomplete="new-password" placeholder="Set password (8+ characters)" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2.5 px-3 text-sm text-white focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary">
+                        <p class="text-[11px] text-slate-500 mt-1">For an existing center, leave blank to keep its current password.</p>
+                    </div>
+                </div>
+                
+                <div class="pt-6 mt-4 flex justify-end gap-3 border-t border-slate-700/80">
+                    <button type="button" onclick="closeCenterModal()" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-700 transition-colors">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-secondary hover:bg-teal-500 text-white shadow-lg shadow-secondary/20 transition-all flex items-center gap-2">
+                        <i class="fas fa-save"></i> Save Center
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AUTHENTICATOR LOGIN VERIFICATION -->
+    <div id="otpModal" class="fixed inset-0 z-[150] bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-sm rounded-2xl p-6">
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xl mx-auto mb-4"><i class="fas fa-shield-halved"></i></div>
+            <h2 class="text-xl font-bold text-white text-center">Two-step verification</h2>
+            <p class="text-sm text-slate-400 text-center mt-2 mb-5">Enter the six-digit code from Google Authenticator, or use one recovery code.</p>
+            <form onsubmit="verifyLoginOtp(event)" class="space-y-4">
+                <input id="loginOtpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="24" required placeholder="123456 or REC-..." class="w-full rounded-xl px-4 py-3 text-white text-center text-lg tracking-widest">
+                <button id="verifyOtpBtn" type="submit" class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-3 font-bold text-white">Verify and Sign In</button>
+                <button type="button" onclick="cancelOtpLogin()" class="w-full rounded-xl border border-slate-600 px-4 py-2.5 text-slate-300">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SECURITY SETTINGS -->
+    <div id="securityModal" class="fixed inset-0 z-[130] bg-black/80 backdrop-blur-md hidden items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="bg-[#101827] border border-slate-700 w-full max-w-3xl rounded-2xl shadow-2xl my-auto">
+            <div class="p-5 sm:p-6 border-b border-slate-700 flex items-center justify-between gap-3">
+                <div><h2 class="text-xl font-bold text-white"><i class="fas fa-shield-halved text-indigo-300 mr-2"></i>Security Settings</h2><p class="text-xs text-slate-400 mt-1">Authenticator protects sign-in; PIN and pattern are local convenience locks.</p></div>
+                <button type="button" onclick="closeSecuritySettings()" class="px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700" aria-label="Close security settings"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <section class="space-y-3">
+                    <h3 class="font-bold text-white">Google Authenticator (2FA)</h3>
+                    <p id="authenticatorStatus" class="text-sm text-slate-300">Checking enrollment status…</p>
+                    <button id="beginTotpBtn" type="button" onclick="beginAuthenticatorSetup()" class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-sm font-bold text-white">Set up Authenticator</button>
+                    <div id="totpSetupPanel" class="hidden space-y-3 rounded-xl border border-slate-700 p-4">
+                        <p class="text-xs text-slate-400">Scan this QR code with Google Authenticator. Setup expires after 5 minutes.</p>
+                        <div id="totpQrCode" class="bg-white p-3 rounded-xl inline-block"></div>
+                        <p class="text-xs text-slate-400">Manual setup key</p><code id="totpManualSecret" class="block break-all text-xs text-emerald-300 select-all"></code>
+                        <form onsubmit="confirmAuthenticatorSetup(event)" class="space-y-2">
+                            <input id="enrollTotpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="Enter current 6-digit code" class="w-full rounded-lg px-3 py-2.5 text-white">
+                            <button id="confirmTotpBtn" type="submit" class="w-full rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-2.5 text-sm font-bold text-white">Confirm and Enable 2FA</button>
+                        </form>
+                    </div>
+                    <div id="recoveryCodesPanel" class="hidden rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 space-y-2">
+                        <p class="text-sm font-bold text-amber-200">Save these recovery codes now</p>
+                        <p class="text-xs text-slate-400">Each code can be used once. They will not be shown again.</p>
+                        <pre id="recoveryCodesText" class="whitespace-pre-wrap break-all text-xs text-white select-all"></pre>
+                        <button type="button" onclick="copyRecoveryCodes()" class="rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white"><i class="fas fa-copy mr-1"></i>Copy recovery codes</button>
+                    </div>
+                    <div id="disableTotpPanel" class="hidden space-y-2 rounded-xl border border-slate-700 p-3">
+                        <label for="disableTotpCode" class="block text-xs text-slate-400">To disable 2FA, enter the current Authenticator code</label>
+                        <div class="flex gap-2"><input id="disableTotpCode" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="123456" class="min-w-0 flex-1 rounded-lg px-3 py-2 text-white"><button type="button" onclick="disableAuthenticator()" class="rounded-lg bg-rose-700 hover:bg-rose-600 px-3 py-2 text-xs font-bold text-white">Disable 2FA</button></div>
+                    </div>
+                </section>
+                <!-- PIN and pattern quick-lock options removed as requested. -->
+            </div>
+        </div>
+    </div>
+
+    <!-- LOCAL IDLE LOCK: convenience only; server session remains independently authenticated -->
+    <div id="localLockOverlay" class="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl hidden items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-sm rounded-2xl p-6 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-2xl mx-auto mb-4"><i class="fas fa-lock"></i></div>
+            <h2 class="text-xl font-bold text-white">CRM locked</h2><p id="localLockMessage" class="text-sm text-slate-400 mt-2 mb-5">Unlock to continue.</p>
+            <div id="lockPinPanel" class="hidden space-y-3"><input id="unlockPinInput" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Enter PIN" class="w-full rounded-lg px-3 py-3 text-center text-white"><button type="button" onclick="verifyLocalPinUnlock()" class="w-full rounded-lg bg-indigo-600 px-4 py-3 font-bold text-white">Unlock with PIN</button></div>
+            <div id="lockPatternPanel" class="hidden space-y-3"><div class="grid grid-cols-3 gap-3 max-w-[210px] mx-auto" id="lockPatternGrid">
+                <button type="button" data-pattern-lock="1" onclick="selectUnlockPatternDot(1)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">1</button><button type="button" data-pattern-lock="2" onclick="selectUnlockPatternDot(2)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">2</button><button type="button" data-pattern-lock="3" onclick="selectUnlockPatternDot(3)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">3</button>
+                <button type="button" data-pattern-lock="4" onclick="selectUnlockPatternDot(4)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">4</button><button type="button" data-pattern-lock="5" onclick="selectUnlockPatternDot(5)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">5</button><button type="button" data-pattern-lock="6" onclick="selectUnlockPatternDot(6)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">6</button>
+                <button type="button" data-pattern-lock="7" onclick="selectUnlockPatternDot(7)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">7</button><button type="button" data-pattern-lock="8" onclick="selectUnlockPatternDot(8)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">8</button><button type="button" data-pattern-lock="9" onclick="selectUnlockPatternDot(9)" class="pattern-dot rounded-full w-12 h-12 border-2 border-slate-500 bg-slate-800 mx-auto">9</button>
+            </div><p id="unlockPatternStatus" class="text-xs text-slate-400">Tap at least 4 dots in order.</p><button type="button" onclick="verifyLocalPatternUnlock()" class="w-full rounded-lg bg-indigo-600 px-4 py-3 font-bold text-white">Unlock with pattern</button><button type="button" onclick="clearUnlockPattern()" class="text-xs text-slate-400 underline">Clear pattern</button></div>
+            <button type="button" onclick="logout()" class="mt-5 text-sm text-rose-300 underline">Sign out instead</button>
+        </div>
+    </div>
+
+    <!-- GLOBAL LOADER -->
+    <div id="globalLoader" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden flex-col items-center justify-center">
+        <div class="w-16 h-16 border-4 border-slate-700 border-t-primary rounded-full animate-spin mb-4"></div>
+        <h2 class="text-white font-bold text-xl tracking-wider">Syncing Data...</h2>
+        <p class="text-slate-400 text-sm mt-2">Please do not close this window.</p>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-x-full transition-transform duration-300 px-5 py-4 rounded-xl shadow-2xl flex items-center gap-4 min-w-[300px] border-l-4 bg-slate-800 border-primary">
+        <i id="toastIcon" class="fas fa-info-circle text-2xl text-primary"></i>
+        <div>
+            <h4 id="toastTitle" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toastMsg" class="text-xs text-slate-300">Message</p>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CORE JAVASCRIPT LOGIC                      -->
+    <!-- ========================================== -->
+    <script>
+        // --- 1. Global State & Settings ---
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzgHPKEZS2aef-EtiI0Gb_WideYUcC5ae1pisdyZ7xbgHGDX7xOTMYsoHaAEm6VOO6AdQ/exec';
+        let centersData = [];
+        let currentUser = null; 
+        let inventoryData = []; 
+        let currentSort = { col: 'sNo', dir: 'asc' };
+        let currentAuthChallenge = null;
+        let centersLoadedFromGAS = false;
+        let inactivityTimer = null;
+        let localLockActive = false;
+        let setupPatternPath = [];
+        let firstPatternPath = null;
+        let patternSetupStage = 'idle';
+        let unlockPatternPath = [];
+        const IDLE_LOCK_MS = 5 * 60 * 1000;
+        
+        // Chart objects
+        let centerChartInst = null;
+        let modelChartInst = null;
+
+        // --- 2. Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Remove legacy browser-local PIN/pattern settings so they cannot trigger a lock.
+            try {
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('crm_local_lock_')) localStorage.removeItem(key);
+                }
+            } catch (err) { console.info('Legacy local-lock cleanup skipped:', err.message); }
+            checkAuthStatus();
+            setupDropZone();
+        });
+
+        function loadInitialData() {
+            inventoryData = [];
+            if (!currentUser || !currentUser.username) return;
+            // Keep offline cache per account so a center login never reuses an admin's cached inventory.
+            let savedData = localStorage.getItem('crm_inventory_data_' + userKey());
+            if (!savedData && ['admin', 'superadmin'].includes(currentUser.role)) {
+                // Admin roles may migrate the old shared cache; center roles deliberately may not.
+                savedData = localStorage.getItem('crm_inventory_data');
+            }
+            if (!savedData) return;
+            try {
+                const parsed = JSON.parse(savedData);
+                if (!Array.isArray(parsed)) return;
+                if (currentUser.role === 'center') {
+                    const code = String(currentUser.code || '').toLowerCase();
+                    inventoryData = parsed.filter(row => {
+                        const loc = String(row.location || row.Location || '').toLowerCase();
+                        const from = String(row.transitFrom || row['Transit From'] || '').toLowerCase();
+                        const to = String(row.transitTo || row['Transit To'] || '').toLowerCase();
+                        return loc === code || from === code || to === code;
+                    });
+                } else {
+                    inventoryData = parsed;
+                }
+            } catch (err) {
+                console.warn('Ignored invalid local inventory cache:', err.message);
+                inventoryData = [];
+            }
+        }
+
+        function populateCenterDropdowns() {
+            const filterCenter = document.getElementById('filterCenter');
+            const locSelect = document.getElementById('location');
+            
+            if (filterCenter) {
+                filterCenter.innerHTML = '<option value="">All Centers</option>' + 
+                    centersData.filter(c => c.code !== 'admin').map(c => `<option value="${c.code}">${c.code} - ${c.name}</option>`).join('');
+            }
+            if (locSelect) {
+                locSelect.innerHTML = centersData.filter(c => c.code !== 'admin').map(c => `<option value="${c.code}">${c.code} - ${c.name}</option>`).join('');
+            }
+        }
+
+        // --- 3. Authentication & GAS Syncing ---
+        async function apiRequest(action, extra = {}) {
+            const payload = { ...extra, action };
+            if (currentUser && currentUser.token && !payload.token) payload.token = currentUser.token;
+
+            // Apps Script can occasionally stall. Never leave login or sync spinning forever.
+            const controller = new AbortController();
+            const timeoutMs = action === 'login' || action === 'verify_login_otp' ? 20000 : 25000;
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                if (!result || typeof result !== 'object') throw new Error('Invalid response from Apps Script.');
+                return result;
+            } catch (err) {
+                if (err && err.name === 'AbortError') {
+                    throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds. Check the Apps Script deployment and execution logs.`);
+                }
+                throw err;
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
+        async function checkAuthStatus() {
+            const saved = sessionStorage.getItem('crm_user_session');
+            if (!saved) return;
+            try {
+                const prior = JSON.parse(saved);
+                if (!prior || !prior.token) throw new Error('No server session token');
+                const result = await apiRequest('validate_session', { token: prior.token });
+                if (result.status !== 'success' || !result.data || !result.data.token) throw new Error('Session expired');
+                currentUser = result.data;
+                sessionStorage.setItem('crm_user_session', JSON.stringify(currentUser));
+                loadInitialData();
+                showApp();
+                await Promise.allSettled([pullCentersFromGAS(), pullFromGAS()]);
+                resetIdleTimer();
+            } catch (err) {
+                sessionStorage.removeItem('crm_user_session');
+                currentUser = null;
+                console.info('Previous CRM session needs sign-in:', err.message);
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+            btn.disabled = true;
+            try {
+                const result = await apiRequest('login', { username: u, password: p });
+                if (result.status === 'mfa_required') {
+                    currentAuthChallenge = result.challengeId;
+                    document.getElementById('loginOtpCode').value = '';
+                    document.getElementById('otpModal').classList.remove('hidden');
+                    document.getElementById('otpModal').classList.add('flex');
+                    setTimeout(() => document.getElementById('loginOtpCode').focus(), 50);
+                } else if (result.status === 'success') {
+                    await completeLogin(result.data);
+                } else {
+                    showToast('Authentication Failed', result.message || 'Sign-in failed.', 'error');
+                }
+            } catch (err) {
+                console.error('Login Error:', err);
+                showToast('Login / Connection Error', err && err.message ? err.message : 'Could not communicate with the Apps Script backend.', 'error');
+            } finally {
+                btn.innerHTML = '<span>Secure Access</span> <i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
+            }
+        }
+
+        async function verifyLoginOtp(e) {
+            e.preventDefault();
+            if (!currentAuthChallenge) return;
+            const button = document.getElementById('verifyOtpBtn');
+            button.disabled = true;
+            button.textContent = 'Verifying…';
+            try {
+                const result = await apiRequest('verify_login_otp', {
+                    challengeId: currentAuthChallenge,
+                    code: document.getElementById('loginOtpCode').value.trim()
+                });
+                if (result.status === 'success') {
+                    currentAuthChallenge = null;
+                    document.getElementById('otpModal').classList.add('hidden');
+                    document.getElementById('otpModal').classList.remove('flex');
+                    await completeLogin(result.data);
+                } else {
+                    showToast('Verification Failed', result.message || 'Invalid verification code.', 'error');
+                }
+            } catch (err) {
+                showToast('Verification Error', err.message || 'Could not verify the code.', 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Verify and Sign In';
+            }
+        }
+
+        function cancelOtpLogin() {
+            currentAuthChallenge = null;
+            document.getElementById('otpModal').classList.add('hidden');
+            document.getElementById('otpModal').classList.remove('flex');
+            document.getElementById('loginOtpCode').value = '';
+        }
+
+        async function completeLogin(user) {
+            if (!user || !user.token) throw new Error('The server did not return a session token.');
+            currentUser = user;
+            sessionStorage.setItem('crm_user_session', JSON.stringify(currentUser));
+            document.getElementById('loginForm').reset();
+            loadInitialData();
+            showApp();
+            showToast('Access Granted', `Welcome back, ${currentUser.name}`, 'success');
+            // Load independent data in parallel so one slow request doesn't block the other.
+            const syncResults = await Promise.allSettled([pullCentersFromGAS(), pullFromGAS()]);
+            if (syncResults.some(r => r.status === 'rejected')) {
+                showToast('Signed in, sync delayed', 'You are signed in, but some data could not refresh. Use Sync/Refresh after checking the connection.', 'warning');
+            }
+            resetIdleTimer();
+        }
+
+        async function pullCentersFromGAS() {
+            const defaultCenters = [
+                {code: 'YGR', name: 'Yemmiganur'}, {code: 'KYM', name: 'Kymore'}, {code: 'RCR', name: 'Raichur'},
+                {code: 'ATP', name: 'Anantapur'}, {code: 'BGK', name: 'Bagalkot'}, {code: 'VNS', name: 'Varanasi'},
+                {code: 'BSI', name: 'Bassi'}, {code: 'NLR', name: 'Nellor'}, {code: 'ADN', name: 'Adoni'},
+                {code: 'MYS', name: 'Mysore'}, {code: 'KNL', name: 'Kurnool'}, {code: 'KOL', name: 'Kolkatha'},
+                {code: 'KTN', name: 'Katni'}, {code: 'HBL', name: 'Hubli'}, {code: 'JBP', name: 'Jabalpur'},
+                {code: 'BGV', name: 'Balgavi'}, {code: 'KRD', name: 'Kiridi'}, {code: 'DGR', name: 'Devghar'},
+                {code: 'JPR', name: 'Jaipur'}, {code: 'UDP', name: 'Udypur'}, {code: 'JDP', name: 'Jodhpur'},
+                {code: 'LKW', name: 'Lucknow'}, {code: 'BWR', name: 'Bhuwaneshwar'}, {code: 'NGR', name: 'Nagpoor'},
+                {code: 'CBR', name: 'Coimbatore'}
+            ];
+            let configured = [];
+            centersLoadedFromGAS = false;
+            if (currentUser && ['admin', 'superadmin'].includes(currentUser.role)) {
+                try {
+                    const result = await apiRequest('read_centers');
+                    if (result.status === 'success' && Array.isArray(result.data)) {
+                        configured = result.data.map(c => ({
+                            code: String(c.Username || '').toUpperCase(),
+                            name: c.CenterName || c.Username,
+                            password: '',
+                            role: 'center',
+                            configured: true
+                        }));
+                        centersLoadedFromGAS = true;
+                    } else {
+                        showToast('Center Sync Warning', result.message || 'Could not load center accounts.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Failed to sync center accounts', err);
+                    showToast('Center Sync Warning', 'Could not load center accounts from Google Sheets.', 'error');
+                }
+            }
+            centersData = configured.slice();
+            defaultCenters.forEach(dc => {
+                if (!centersData.some(c => c.code === dc.code)) {
+                    centersData.push({ ...dc, password: '', role: 'center', configured: false });
+                }
+            });
+            populateCenterDropdowns();
+            if (currentUser && ['admin', 'superadmin'].includes(currentUser.role) && document.getElementById('view-centers').classList.contains('flex')) renderCentersTable();
+            if (document.getElementById('view-center-stats') && !document.getElementById('view-center-stats').classList.contains('hidden')) renderCenterStats();
+        }
+
+        async function pushCentersToGAS() {
+            if (!currentUser || !['superadmin', 'admin'].includes(currentUser.role)) {
+                showToast('Permission Restricted', 'Only Admin or Super Admin can change center master data.', 'error');
+                return false;
+            }
+            if (!centersLoadedFromGAS) {
+                showToast('Center Save Blocked', 'Center data was not loaded from Google Sheets. Fetch center data again before saving.', 'error');
+                return false;
+            }
+            const exportCenters = centersData.map(c => ({
+                Username: c.code,
+                Password: c.password || '',
+                Role: 'center',
+                CenterName: c.name
+            }));
+            try {
+                const result = await apiRequest('save_centers', { data: exportCenters });
+                if (result.status !== 'success') throw new Error(result.message || 'Center save failed.');
+                await pullCentersFromGAS();
+                showToast('Center Accounts Saved', result.message || 'Center records saved securely.', 'success');
+                return true;
+            } catch (err) {
+                console.error('Failed to save centers', err);
+                showToast('Center Save Failed', err.message || 'Could not save center records.', 'error');
+                return false;
+            }
+        }
+
+        async function logout() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = null;
+            if (currentUser && currentUser.token) {
+                try { await apiRequest('logout'); } catch (err) { console.info('Server logout cleanup skipped:', err.message); }
+            }
+            sessionStorage.removeItem('crm_user_session');
+            currentUser = null;
+            inventoryData = [];
+            centersData = [];
+            localLockActive = false;
+            document.getElementById('localLockOverlay').classList.add('hidden');
+            document.getElementById('localLockOverlay').classList.remove('flex');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            
+            document.getElementById('sidebarRoleLabel').innerText = currentUser.role === 'superadmin' ? 'Super Admin · Full Access' : (currentUser.role === 'admin' ? 'Admin · Management Access' : 'Center Manager');
+            document.getElementById('currentUserDisplay').innerText = ['admin','superadmin'].includes(currentUser.role) ? (currentUser.role === 'superadmin' ? 'Super Administrator' : 'Admin User') : `Manager - ${currentUser.code}`;
+            document.getElementById('currentLocationDisplay').innerText = ['admin','superadmin'].includes(currentUser.role) ? 'Global Organization' : `${currentUser.code} Center Operations`;
+            
+            const filterCenter = document.getElementById('filterCenter');
+            const navCenters = document.getElementById('nav-centers');
+            const navCenterStats = document.getElementById('nav-center-stats');
+            if (['admin','superadmin'].includes(currentUser.role)) {
+                filterCenter.classList.remove('hidden');
+                document.getElementById('nav-redundancy').classList.remove('hidden');
+                if (['admin','superadmin'].includes(currentUser.role)) { navCenters.classList.remove('hidden'); navCenters.classList.add('flex'); } else { navCenters.classList.add('hidden'); navCenters.classList.remove('flex'); }
+                navCenterStats.classList.remove('hidden');
+                navCenterStats.classList.add('flex');
+                document.getElementById('location').disabled = false;
+                document.getElementById('dashboardSubtitle').innerText = "Real-time overview of IT asset infrastructure across all locations";
+            } else {
+                filterCenter.classList.add('hidden');
+                document.getElementById('nav-redundancy').classList.remove('hidden');
+                navCenters.classList.add('hidden');
+                navCenters.classList.remove('flex');
+                navCenterStats.classList.add('hidden');
+                navCenterStats.classList.remove('flex');
+                document.getElementById('location').value = currentUser.code;
+                document.getElementById('location').disabled = true;
+                document.getElementById('dashboardSubtitle').innerText = `Real-time overview of IT assets at ${currentUser.code}`;
+            }
+
+            updateIntegrationPermissions();
+            switchView('dashboard');
+        }
+
+        // Admin and Super Admin can synchronize with Google Sheets; only Super Admin can import/overwrite Excel data.
+        function updateIntegrationPermissions() {
+            const isSuperAdmin = !!currentUser && currentUser.role === 'superadmin';
+            const canSyncSheets = !!currentUser && ['admin','superadmin'].includes(currentUser.role);
+            const syncPanel = document.getElementById('integrationSyncPanel');
+            const dropZone = document.getElementById('dropZone');
+            const excelTitle = document.getElementById('excelPanelTitle');
+            const subtitle = document.getElementById('integrationSubtitle');
+            if (syncPanel) syncPanel.classList.toggle('hidden', !canSyncSheets);
+            if (dropZone) dropZone.classList.toggle('hidden', !isSuperAdmin);
+            if (excelTitle) excelTitle.textContent = isSuperAdmin ? 'Excel Import / Export (Super Admin)' : (canSyncSheets ? 'Excel Export Only (Admin)' : 'Excel Export Only');
+            if (subtitle) subtitle.textContent = isSuperAdmin
+                ? 'Super Admin can import/overwrite Excel data and synchronize with Google Sheets.'
+                : (canSyncSheets ? 'Admin can manage centers and inventory and synchronize with Google Sheets. Excel import/overwrite is restricted to Super Admin.' : 'Export only. Import, overwrite, cloud sync, and inventory-wide changes are restricted to Admin and Super Admin.');
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('#appContainer aside');
+            if (!sidebar || window.innerWidth >= 768) return;
+            let backdrop = document.getElementById('mobileSidebarBackdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'mobileSidebarBackdrop';
+                backdrop.className = 'fixed inset-0 z-[80] bg-black/70 md:hidden hidden';
+                backdrop.addEventListener('click', closeMobileMenu);
+                document.body.appendChild(backdrop);
+            }
+            if (sidebar.classList.contains('mobile-sidebar-open')) {
+                closeMobileMenu();
+                return;
+            }
+            sidebar.classList.remove('hidden');
+            sidebar.classList.add('mobile-sidebar-open', 'fixed', 'inset-y-0', 'left-0', 'z-[90]', 'shadow-2xl');
+            backdrop.classList.remove('hidden');
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.querySelector('#appContainer aside');
+            if (sidebar) {
+                sidebar.classList.remove('mobile-sidebar-open', 'fixed', 'inset-y-0', 'left-0', 'z-[90]', 'shadow-2xl');
+                sidebar.classList.add('hidden');
+            }
+            const backdrop = document.getElementById('mobileSidebarBackdrop');
+            if (backdrop) backdrop.classList.add('hidden');
+        }
+
+        window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeMobileMenu(); });
+
+        // --- 4. Navigation ---
+        function switchView(viewId) {
+            closeMobileMenu();
+            if (viewId === 'redundancy' && !currentUser) return;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            if (viewId === 'inventory' || viewId === 'centers' || viewId === 'center-stats' || viewId === 'transit') document.getElementById(`view-${viewId}`).classList.add('flex');
+            
+            document.getElementById(`nav-${viewId}`).classList.add('active');
+            
+            if (viewId === 'integrations') updateIntegrationPermissions();
+            if (viewId === 'dashboard') renderDashboard();
+            if (viewId === 'inventory') renderTable();
+            if (viewId === 'redundancy') renderRedundancy();
+            if (viewId === 'centers') renderCentersTable();
+            if (viewId === 'center-stats') renderCenterStats();
+            if (viewId === 'transit') { populateTransitDropdowns(); renderTransitTable(); }
+        }
+
+        function jumpToInventory(status = '', center = '', search = '') {
+            const filterStatusEl = document.getElementById('filterStatus');
+            if (filterStatusEl) filterStatusEl.value = status;
+            
+            const filterCenterEl = document.getElementById('filterCenter');
+            if (filterCenterEl && !filterCenterEl.classList.contains('hidden')) {
+                const exists = Array.from(filterCenterEl.options).some(opt => opt.value === center);
+                if (exists) filterCenterEl.value = center;
+                else filterCenterEl.value = '';
+            }
+            
+            const searchEl = document.getElementById('searchInput');
+            if (searchEl) searchEl.value = search;
+            
+            switchView('inventory');
+        }
+
+        // --- 5. Data Access Helpers ---
+        function getFilteredData() {
+            return ['admin','superadmin'].includes(currentUser.role) ? [...inventoryData] : inventoryData.filter(d => d.location === currentUser.code);
+        }
+
+        function saveToLocal() {
+            if (!currentUser || !currentUser.username) return;
+            localStorage.setItem('crm_inventory_data_' + userKey(), JSON.stringify(inventoryData));
+        }
+
+        // --- 6. Dashboard & Chart.js ---
+        function renderDashboard() {
+            const data = getFilteredData();
+            
+            const total = data.length;
+            const active = data.filter(d => (d.status || '').toLowerCase() === 'active').length;
+            const faulty = data.filter(d => { const stat = (d.status || '').toLowerCase(); return stat.includes('faulty') || stat.includes('repair'); }).length;
+            const pro = data.filter(d => (d.modelName || '').toLowerCase().includes('pro')).length;
+            const nonPro = total - pro; 
+            
+            document.getElementById("kpi-total").innerHTML = total;
+            document.getElementById("kpi-active").innerHTML = active;
+            document.getElementById("kpi-faulty").innerHTML = faulty;
+            document.getElementById("kpi-pro").innerHTML = pro;
+            document.getElementById("kpi-nonpro").innerHTML = nonPro;
+
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, Inter';
+            if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+
+            // 1. Center Chart
+            const ctxCenter = document.getElementById('centerChart').getContext('2d');
+            if (centerChartInst) centerChartInst.destroy();
+            
+            let centerLabels = [], centerData = [];
+            if (['admin','superadmin'].includes(currentUser.role)) {
+                const centerCounts = {};
+                data.forEach(d => { if(d.location) centerCounts[d.location] = (centerCounts[d.location]||0) + 1; });
+                centerLabels = Object.keys(centerCounts);
+                centerData = Object.values(centerCounts);
+            } else {
+                document.getElementById('barChartTitle').innerHTML = '<i class="fas fa-briefcase text-primary"></i> Project Distribution';
+                const projCounts = {};
+                data.forEach(d => { const p = d.projectName||'Unassigned'; projCounts[p] = (projCounts[p]||0) + 1; });
+                centerLabels = Object.keys(projCounts);
+                centerData = Object.values(projCounts);
+            }
+
+            centerChartInst = new Chart(ctxCenter, {
+                type: 'bar',
+                data: {
+                    labels: centerLabels,
+                    datasets: [{
+                        label: 'Devices',
+                        data: centerData,
+                        backgroundColor: '#e11d48',
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    onClick: (event, elements, chart) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const label = chart.data.labels[index];
+                            if (['admin','superadmin'].includes(currentUser.role)) {
+                                jumpToInventory('', label, '');
+                            } else {
+                                jumpToInventory('', '', label);
+                            }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true, grid: { color: '#1e293b' } }, x: { grid: { display: false } } },
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { anchor: 'end', align: 'top', color: '#f8fafc', font: { weight: 'bold', size: 10 } }
+                    }
+                }
+            });
+
+            // 2. Model Donut Chart
+            const ctxModel = document.getElementById('modelChart').getContext('2d');
+            if (modelChartInst) modelChartInst.destroy();
+            
+            const modelCounts = {};
+            data.forEach(d => { if(d.modelName) modelCounts[d.modelName] = (modelCounts[d.modelName]||0) + 1; });
+            const sortedModels = Object.entries(modelCounts).sort((a,b) => b[1]-a[1]);
+            const topLabels = sortedModels.slice(0,5).map(arr => arr[0]);
+            const topData = sortedModels.slice(0,5).map(arr => arr[1]);
+            
+            modelChartInst = new Chart(ctxModel, {
+                type: 'doughnut',
+                data: {
+                    labels: topLabels,
+                    datasets: [{
+                        data: topData,
+                        backgroundColor: ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#ffe4e6'],
+                        borderWidth: 0, hoverOffset: 5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '75%',
+                    onClick: (event, elements, chart) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const label = chart.data.labels[index];
+                            jumpToInventory('', '', label);
+                        }
+                    },
+                    plugins: { 
+                        legend: { position: 'right' },
+                        datalabels: { color: '#ffffff', font: { weight: 'bold', size: 12 }, formatter: (value) => { return value > 0 ? value : ''; } }
+                    }
+                }
+            });
+        }
+        
+        // --- Dashboard PDF Export ---
+        function exportDashboardPDF() {
+            const element = document.getElementById('view-dashboard');
+            const btn = document.querySelector('button[onclick="exportDashboardPDF()"]');
+            if(!btn) return;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+            
+            const opt = {
+                margin:       10,
+                filename:     `Trace_Mecka_Dashboard_${new Date().toISOString().slice(0,10)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#000000' },
+                jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalContent;
+                showToast('Export Complete', 'Dashboard PDF generated successfully.', 'success');
+            }).catch(err => {
+                btn.innerHTML = originalContent;
+                showToast('Export Failed', 'Error generating PDF.', 'error');
+                console.error(err);
+            });
+        }
+
+        // --- 7. Inventory CRUD & Bulk Actions Module ---
+        function renderTable() {
+            let data = getFilteredData();
+            
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const fStatus = document.getElementById('filterStatus').value;
+            const fCenter = document.getElementById('filterCenter') ? document.getElementById('filterCenter').value : '';
+            const dateFrom = document.getElementById('filterDateFrom')?.value || '';
+            const dateTo = document.getElementById('filterDateTo')?.value || '';
+
+            data = data.filter(d => {
+                let s = false;
+                if (search === 'non-pro') {
+                    // Smart filter: exclude any device that has 'pro' in the model name (handles nulls safely)
+                    s = (!d.modelName || !d.modelName.toLowerCase().includes('pro'));
+                } else if (search === 'pro') {
+                    s = d.modelName && d.modelName.toLowerCase().includes('pro');
+                } else {
+                    const searchable = [d.tagId, d.assetId, d.sNo, d.modelName, d.imei, d.projectName,
+                        d.location, d.status, d.supplier, d.storage, d.color, d.assetDate, d.receivedDate]
+                        .map(v => String(v ?? '').toLowerCase());
+                    s = search === '' || searchable.some(v => v.includes(search));
+                }
+                const stat = fStatus === '' || (d.status && d.status === fStatus);
+                const cen = fCenter === '' || (d.location && d.location === fCenter);
+                const assetDate = d.assetDate || d.receivedDate || (d.transitReceivedAt ? String(d.transitReceivedAt).slice(0,10) : '');
+                const dateOk = (!dateFrom || (assetDate && assetDate >= dateFrom)) && (!dateTo || (assetDate && assetDate <= dateTo));
+                return s && stat && cen && dateOk;
+            });
+            
+            data.sort((a,b) => {
+                let valA = parseInt(a.sNo) || 0;
+                let valB = parseInt(b.sNo) || 0;
+                return currentSort.dir === 'asc' ? valA - valB : valB - valA;
+            });
+
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('emptyState').classList.add('flex');
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('emptyState').classList.remove('flex');
+                
+                data.forEach(d => {
+                    const statusLower = (d.status || '').toLowerCase();
+                    let statusClass = 'bg-slate-700 text-slate-300'; 
+                    if (statusLower === 'active') statusClass = 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400';
+                    else if (statusLower.includes('faulty')) statusClass = 'bg-rose-500/10 border-rose-500/50 text-rose-400';
+                    else if (statusLower.includes('repair')) statusClass = 'bg-amber-500/10 border-amber-500/50 text-amber-400';
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-800/80 transition-colors group cursor-default';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 w-10 text-center">
+                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-slate-600 bg-slate-800 cursor-pointer accent-primary" value="${d.id}" onchange="updateBulkActions()">
+                        </td>
+                        <td class="py-3 px-5 text-slate-400 font-medium">${d.sNo || '-'}</td>
+                        <td class="py-3 px-5 font-mono text-primary font-bold">${d.tagId || '-'}</td>
+                        <td class="py-3 px-5"><span class="bg-slate-800 text-[10px] px-2 py-1 rounded border border-slate-600 font-bold">${d.location || 'UNKN'}</span></td>
+                        <td class="py-3 px-5 font-semibold text-slate-200">${d.modelName || '-'}</td>
+                        <td class="py-3 px-5 text-slate-400 text-xs font-semibold">${d.projectName || '-'}</td>
+                        <td class="py-3 px-5 font-mono text-xs text-slate-500 group-hover:text-slate-300 transition-colors">${d.imei || '-'}</td>
+                        <td class="py-3 px-5">
+                            <span class="text-[10px] px-2.5 py-1 rounded border font-bold uppercase tracking-wider ${statusClass}">${d.status || 'UNKNOWN'}</span>
+                        </td>
+                        <td class="py-3 px-5 text-right opacity-50 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openQRModal('${d.tagId || ''}', '${d.imei || ''}')" title="Generate QR Code" class="w-8 h-8 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"><i class="fas fa-qrcode"></i></button>
+                            <button onclick="editDevice(${d.id})" title="Edit Device" class="w-8 h-8 rounded hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-400 transition-colors"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteDevice(${d.id})" title="Delete Device" class="w-8 h-8 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            document.getElementById('recordCountDisplay').innerText = `Showing ${data.length} records`;
+            updateBulkActions(); // Reset bulk actions on render
+        }
+
+        // --- QR label generation for selected or currently filtered assets (Tag ID + IMEI only) ---
+        function barcodeAssetText(d) {
+            return `Tag ID: ${d.tagId || ''}\nIMEI: ${d.imei || ''}`;
+        }
+        function generateSelectedBarcodes() {
+            const ids = getSelectedIds();
+            const assets = inventoryData.filter(d => ids.includes(String(d.id)));
+            if (!assets.length) { showToast('Select assets', 'Select one or more assets using the table checkboxes first.', 'error'); return; }
+            printAssetBarcodes(assets);
+        }
+        function generateFilteredBarcodes() {
+            const body = document.getElementById('inventoryTableBody');
+            const visibleIds = [...body.querySelectorAll('.row-checkbox')].map(cb => String(cb.value));
+            const assets = inventoryData.filter(d => visibleIds.includes(String(d.id)));
+            if (!assets.length) { showToast('No assets', 'No filtered assets are available to print.', 'error'); return; }
+            printAssetBarcodes(assets);
+        }
+        function printAssetBarcodes(assets) {
+            const width = Math.max(25, Math.min(100, Number(document.getElementById('barcodeWidth').value) || 50));
+            const height = Math.max(15, Math.min(80, Number(document.getElementById('barcodeHeight').value) || 30));
+            const win = window.open('', '_blank');
+            if (!win) { showToast('Popup blocked', 'Allow pop-ups to print QR labels.', 'error'); return; }
+            const labels = assets.map((d, i) => `<article class="label"><div class="qr" id="qr${i}"></div><div class="meta"><b>Tag ID: ${escapeBarcode(d.tagId || 'N/A')}</b><span>IMEI: ${escapeBarcode(d.imei || 'N/A')}</span></div></article>`).join('');
+            win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Asset QR Labels</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><style>@page{size:auto;margin:5mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;display:flex;flex-wrap:wrap;align-items:flex-start;gap:3mm}.label{width:${width}mm;height:${height}mm;border:0.2mm solid #bbb;padding:1.2mm;overflow:hidden;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:2mm;break-inside:avoid}.qr{flex:0 0 auto;display:flex;align-items:center;justify-content:center}.qr img,.qr canvas{width:min(${Math.max(12, Math.min(height - 4, width * 0.38))}mm,100%)!important;height:auto!important;max-height:${Math.max(10, height - 4)}mm}.meta{font-size:7pt;line-height:1.35;text-align:left;max-width:65%;overflow-wrap:anywhere}.meta span{display:block}</style></head><body>${labels}<script>window.onload=()=>{${assets.map((d,i)=>`try{new QRCode(document.getElementById('qr${i}'),{text:${JSON.stringify(barcodeAssetText(d))},width:128,height:128,correctLevel:QRCode.CorrectLevel.M});}catch(e){}`).join('')}setTimeout(()=>window.print(),500)};<\/script></body></html>`);
+            win.document.close();
+        }
+        function escapeBarcode(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+
+        // --- Bulk Action Logic ---
+        function toggleAllCheckboxes() {
+            const master = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+            updateBulkActions();
+        }
+
+        function updateBulkActions() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            const bulkContainer = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            if (checkboxes.length > 0) {
+                bulkContainer.classList.remove('hidden');
+                bulkContainer.classList.add('flex');
+                selectedCount.innerText = checkboxes.length;
+            } else {
+                bulkContainer.classList.add('hidden');
+                bulkContainer.classList.remove('flex');
+                document.getElementById('selectAllCheckbox').checked = false;
+            }
+        }
+
+        function getSelectedIds() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.value));
+        }
+
+        function bulkUpdateStatus(newStatus) {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
+            
+            const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
+            const editor = currentUser ? (currentUser.role === 'admin' ? 'Admin (' + currentUser.code + ')' : currentUser.name + ' (' + currentUser.code + ')') : 'System';
+
+            let updatedCount = 0;
+            inventoryData = inventoryData.map(d => {
+                if (ids.includes(d.id)) {
+                    if(['admin','superadmin'].includes(currentUser.role) || d.location === currentUser.code) {
+                        updatedCount++;
+                        return { ...d, status: newStatus, lastEditedBy: editor, lastEditedTime: timestamp };
+                    }
+                }
+                return d;
+            });
+
+            if (updatedCount > 0) {
+                saveToLocal();
+                renderTable();
+                showToast('Bulk Update', `Successfully updated ${updatedCount} assets to ${newStatus}.`, 'success');
+                pushToGAS();
+            }
+        }
+
+        function bulkDelete() {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
+            if (confirm(`CRITICAL: Are you sure you want to permanently delete these ${ids.length} selected assets?`)) {
+                let deletedCount = 0;
+                inventoryData = inventoryData.filter(d => {
+                    if (ids.includes(d.id)) {
+                        if(['admin','superadmin'].includes(currentUser.role) || d.location === currentUser.code) {
+                            deletedCount++;
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+
+                if (deletedCount > 0) {
+                    saveToLocal();
+                    renderTable();
+                    showToast('Bulk Delete', `Successfully deleted ${deletedCount} assets.`, 'info');
+                    pushToGAS();
+                }
+            }
+        }
+
+        // --- QR Code Generator Logic ---
+        let qrCodeInstance = null;
+        function openQRModal(tagId, imei) {
+            document.getElementById('qrSubtitle').innerText = `${tagId} | IMEI: ${imei}`;
+            const container = document.getElementById('qrcodeContainer');
+            container.innerHTML = ''; // clear previous
+            
+            qrCodeInstance = new QRCode(container, {
+                text: JSON.stringify({ TagID: tagId, IMEI: imei }),
+                width: 150,
+                height: 150,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            const modal = document.getElementById('qrModal');
+            const content = document.getElementById('qrModalContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+        }
+
+        function closeQRModal() {
+            const modal = document.getElementById('qrModal');
+            const content = document.getElementById('qrModalContent');
+            content.classList.remove('scale-100'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+        }
+
+        function printQR() {
+            const qrContent = document.getElementById('qrcodeContainer').innerHTML;
+            const subtitle = document.getElementById('qrSubtitle').innerText;
+            const printWindow = window.open('', '', 'height=500, width=500');
+            printWindow.document.write('<html><head><title>Print Asset Label</title>');
+            printWindow.document.write('<style>body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; } p { font-size: 14px; margin-top: 10px; font-weight: bold; }</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(qrContent);
+            printWindow.document.write(`<p>${subtitle}</p>`);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+
+        function sortTable(col) {
+            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            renderTable();
+        }
+
+        function openDeviceModal(id = null) {
+            if (currentUser && !['admin','superadmin','center'].includes(currentUser.role)) { showToast('Permission Restricted', 'You do not have permission to add or edit asset records.', 'error'); return; }
+            const form = document.getElementById('deviceForm');
+            form.reset();
+            document.getElementById('deviceId').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle text-primary"></i> Add New Asset';
+            
+            if (currentUser.role === 'center') {
+                document.getElementById('location').value = currentUser.code;
+            } else {
+                document.getElementById('location').value = 'RCR'; 
+            }
+
+            if (id) {
+                const d = inventoryData.find(x => x.id === id);
+                if (d) {
+                    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-primary"></i> Edit Asset';
+                    document.getElementById('deviceId').value = d.id;
+                    document.getElementById('sNo').value = d.sNo || '';
+                    document.getElementById('tagId').value = d.tagId || '';
+                    document.getElementById('location').value = d.location || '';
+                    document.getElementById('projectName').value = d.projectName || '';
+                    document.getElementById('modelName').value = d.modelName || '';
+                    document.getElementById('supplier').value = d.supplier || '';
+                    document.getElementById('imei').value = d.imei || '';
+                    document.getElementById('status').value = d.status || '';
+                    document.getElementById('storage').value = d.storage || '';
+                    document.getElementById('color').value = d.color || '';
+                }
+            } else {
+                let maxSNo = 0;
+                inventoryData.forEach(d => { if(parseInt(d.sNo) > maxSNo) maxSNo = parseInt(d.sNo); });
+                document.getElementById('sNo').value = maxSNo + 1;
+            }
+
+            const modal = document.getElementById('deviceModal');
+            const content = document.getElementById('modalContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+        }
+
+        function closeDeviceModal() {
+            const modal = document.getElementById('deviceModal');
+            const content = document.getElementById('modalContent');
+            content.classList.remove('scale-100'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+        }
+
+        function saveDevice(e) {
+            e.preventDefault();
+            if (currentUser && !['admin','superadmin','center'].includes(currentUser.role)) { showToast('Permission Restricted', 'You do not have permission to change inventory data.', 'error'); return; }
+            const id = document.getElementById('deviceId').value;
+            
+            const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
+            const editor = currentUser ? (currentUser.role === 'admin' ? 'Admin (' + currentUser.code + ')' : currentUser.name + ' (' + currentUser.code + ')') : 'System';
+
+            const newDevice = {
+                id: id ? parseInt(id) : Date.now(),
+                sNo: document.getElementById('sNo').value,
+                tagId: document.getElementById('tagId').value.trim(),
+                location: document.getElementById('location').value,
+                projectName: document.getElementById('projectName').value.trim(),
+                modelName: document.getElementById('modelName').value.trim(),
+                supplier: document.getElementById('supplier').value.trim(),
+                imei: document.getElementById('imei').value.trim(),
+                status: document.getElementById('status').value,
+                assetDate: (id && inventoryData.find(x => x.id === parseInt(id))?.assetDate) || new Date().toISOString().slice(0,10),
+                storage: document.getElementById('storage').value.trim(),
+                color: document.getElementById('color').value.trim(),
+                lastEditedBy: editor,
+                lastEditedTime: timestamp
+            };
+
+            if (id) {
+                const idx = inventoryData.findIndex(x => x.id === parseInt(id));
+                if (idx !== -1) inventoryData[idx] = newDevice;
+                showToast('Success', 'Asset record updated.', 'success');
+            } else {
+                inventoryData.push(newDevice);
+                showToast('Success', 'New asset added to inventory.', 'success');
+            }
+
+            saveToLocal();
+            renderTable();
+            closeDeviceModal();
+            pushToGAS(); 
+        }
+
+        function editDevice(id) {
+            if (currentUser && !['admin','superadmin','center'].includes(currentUser.role)) { showToast('Permission Restricted', 'You do not have permission to edit inventory data.', 'error'); return; }
+            const d = inventoryData.find(x => x.id === id);
+            if (!d) return;
+            if(!['admin','superadmin'].includes(currentUser.role) && d.location !== currentUser.code) {
+                showToast('Access Denied', 'You lack permissions to edit records from other centers.', 'error');
+                return;
+            }
+            openDeviceModal(id);
+        }
+
+        function deleteDevice(id) {
+            if (currentUser && !['superadmin','admin','center'].includes(currentUser.role)) { showToast('Permission Restricted', 'You do not have permission to delete asset records.', 'error'); return; }
+            const d = inventoryData.find(x => x.id === id);
+            if (!d) return;
+            if(!['admin','superadmin'].includes(currentUser.role) && d.location !== currentUser.code) {
+                showToast('Access Denied', 'Cannot delete records outside your jurisdiction.', 'error');
+                return;
+            }
+            if (confirm(`CRITICAL: Confirm deletion of asset ${d.tagId || id}?`)) {
+                inventoryData = inventoryData.filter(x => x.id !== id);
+                saveToLocal();
+                renderTable();
+                showToast('Deleted', 'Asset successfully removed from database.', 'info');
+                pushToGAS(); 
+            }
+        }
+
+        // --- Asset Transit: all centers can initiate from their own inventory; Admin has global access ---
+        function transitTimestamp() {
+            return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
+        }
+        function transitCenterOptions(includeAll=false) {
+            const codes = [...new Set([...centersData.filter(c => (c.code || '').toLowerCase() !== 'admin').map(c => c.code), ...inventoryData.map(d => d.location)].filter(Boolean))].sort();
+            return (includeAll ? '<option value="">All Centers</option>' : '') + codes.map(c => `<option value="${String(c).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${String(c).replace(/</g,'&lt;')}</option>`).join('');
+        }
+        function populateTransitDropdowns() {
+            if (!currentUser) return;
+            const from = document.getElementById('transitFrom');
+            const to = document.getElementById('transitTo');
+            const filter = document.getElementById('transitFilterCenter');
+            if (!from || !to || !filter) return;
+            const oldFrom = from.value, oldTo = to.value, oldFilter = filter.value;
+            from.innerHTML = transitCenterOptions(); to.innerHTML = '<option value="">Select destination...</option>' + transitCenterOptions();
+            filter.innerHTML = transitCenterOptions(true);
+            if (!['admin','superadmin'].includes(currentUser.role)) { from.value = currentUser.code; from.disabled = true; } else { from.disabled = false; if (oldFrom) from.value = oldFrom; }
+            if (oldTo && [...to.options].some(o => o.value === oldTo)) to.value = oldTo;
+            if (oldFilter && [...filter.options].some(o => o.value === oldFilter)) filter.value = oldFilter;
+            refreshTransitAssets();
+        }
+        function refreshTransitAssets() {
+            const from = document.getElementById('transitFrom');
+            const asset = document.getElementById('transitAsset');
+            const search = document.getElementById('transitAssetSearch');
+            const count = document.getElementById('transitAssetMatchCount');
+            if (!from || !asset) return;
+            const old = asset.value, source = from.value;
+            const allRecords = inventoryData.filter(d => d.location === source && (!d.transitStatus || d.transitStatus === 'Received' || d.transitStatus === 'Cancelled'));
+            const q = (search?.value || '').trim().toLocaleLowerCase();
+            const records = allRecords.filter(d => !q || [d.id, d.assetId, d.tagId, d.imei, d.modelName, d.projectName, d.location, d.status].some(v => String(v ?? '').toLocaleLowerCase().includes(q)));
+            asset.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = records.length ? 'Select asset to transfer...' : 'No matching assets found';
+            asset.appendChild(placeholder);
+            records.forEach(d => {
+                const option = document.createElement('option');
+                option.value = String(d.id);
+                option.textContent = `${d.tagId || 'No Tag'} — ${d.modelName || 'Unknown model'} — IMEI ${d.imei || 'N/A'} — Asset ID ${d.assetId || d.id}`;
+                asset.appendChild(option);
+            });
+            if (old && records.some(d => String(d.id) === old)) asset.value = old;
+            if (count) count.textContent = `${records.length} matching asset(s) available from ${source || 'selected source center'}. Select one from the list to mark it for transfer.`;
+        }
+        async function submitTransitUpdate(asset, status, from, to, note) {
+            if (!asset || !currentUser) return;
+            const result = await apiRequest('transit_asset', {
+                tagId: asset.tagId || '', imei: asset.imei || '',
+                transitStatus: status, from: from || asset.transitFrom || '',
+                to: to || asset.transitTo || '', note: note || ''
+            });
+            if (result.status !== 'success') throw new Error(result.message || 'Transfer update failed.');
+            await pullFromGAS();
+            populateTransitDropdowns();
+            renderTransitTable();
+            return result;
+        }
+        async function saveTransit(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            const id = Number(document.getElementById('transitAsset').value);
+            const d = inventoryData.find(x => Number(x.id) === id);
+            const from = document.getElementById('transitFrom').value;
+            const to = document.getElementById('transitTo').value;
+            const status = document.getElementById('transitStatus').value;
+            const note = document.getElementById('transitNote').value.trim();
+            if (!d) { showToast('Select Asset', 'Choose a valid asset to transfer.', 'error'); return; }
+            if (from === to) { showToast('Invalid Transfer', 'Source and destination centers must be different.', 'error'); return; }
+            if (status === 'Received' && d.transitStatus !== 'In Transit') { showToast('No Pending Transfer', 'This asset has no active transfer to receive.', 'error'); return; }
+            const btn = document.querySelector('#transitForm button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.dataset.oldText = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving…'; }
+            try {
+                await submitTransitUpdate(d, status, from, to, note);
+                document.getElementById('transitForm').reset();
+                const assetSearch = document.getElementById('transitAssetSearch'); if (assetSearch) assetSearch.value = '';
+                populateTransitDropdowns(); renderTransitTable();
+                showToast('Transfer Updated', status === 'Received' ? 'Asset receipt was saved to Google Sheets.' : `Transfer status saved: ${status}.`, 'success');
+            } catch (err) {
+                showToast('Transfer Failed', err.message || 'Could not save transfer to Google Sheets.', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.oldText || 'Save Transfer'; }
+            }
+        }
+        async function receiveTransitAsset(id) {
+            const d = inventoryData.find(x => Number(x.id) === Number(id));
+            if (!d || d.transitStatus !== 'In Transit') return;
+            if (!['admin','superadmin'].includes(currentUser.role) && currentUser.code !== d.transitTo) {
+                showToast('Access Denied', 'Only the destination center can receive this asset.', 'error'); return;
+            }
+            try {
+                await submitTransitUpdate(d, 'Received', d.transitFrom, d.transitTo, d.transitNote || '');
+                showToast('Received', `Asset ${d.tagId || d.imei} receipt was saved to Google Sheets.`, 'success');
+            } catch (err) {
+                showToast('Receive Failed', err.message || 'Could not confirm receipt.', 'error');
+            }
+        }
+        // Transit row selection is for marking records for review; it does not alter asset status.
+        const selectedTransitIds = new Set();
+        function toggleTransitRow(id, checked) {
+            const key = String(id);
+            if (checked) selectedTransitIds.add(key); else selectedTransitIds.delete(key);
+            updateTransitSelectionUI();
+        }
+        function toggleAllTransitRows(checked) {
+            const ids = [...document.querySelectorAll('#transitTableBody input.transit-row-select')];
+            ids.forEach(cb => { cb.checked = checked; if (checked) selectedTransitIds.add(String(cb.value)); else selectedTransitIds.delete(String(cb.value)); });
+            updateTransitSelectionUI();
+        }
+        function clearTransitSelection() {
+            selectedTransitIds.clear();
+            document.querySelectorAll('#transitTableBody input.transit-row-select').forEach(cb => cb.checked = false);
+            updateTransitSelectionUI();
+        }
+        function updateTransitSelectionUI() {
+            const count = document.getElementById('transitSelectedCount');
+            if (count) count.textContent = selectedTransitIds.size;
+            const visible = [...document.querySelectorAll('#transitTableBody input.transit-row-select')];
+            const allChecked = visible.length > 0 && visible.every(cb => selectedTransitIds.has(String(cb.value)));
+            ['transitSelectAll','transitHeaderSelectAll'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = allChecked; });
+        }
+        function renderTransitTable() {
+            const body = document.getElementById('transitTableBody'); if (!body || !currentUser) return;
+            const q = (document.getElementById('transitSearch')?.value || '').trim().toLowerCase();
+            const status = document.getElementById('transitFilterStatus')?.value || '';
+            const center = document.getElementById('transitFilterCenter')?.value || '';
+            const records = inventoryData.filter(d => d.transitStatus && (['admin','superadmin'].includes(currentUser.role) || d.transitFrom === currentUser.code || d.transitTo === currentUser.code || d.location === currentUser.code))
+                .filter(d => (!status || d.transitStatus === status) && (!center || d.transitFrom === center || d.transitTo === center || d.location === center))
+                .filter(d => !q || [d.id,d.assetId,d.tagId,d.imei,d.modelName,d.projectName,d.transitFrom,d.transitTo,d.transitStatus,d.transitDate,d.receivedDate,d.transitNote,d.location,d.status].some(v => String(v ?? '').toLowerCase().includes(q)))
+                .sort((a,b) => String(b.transitDate || '').localeCompare(String(a.transitDate || '')));
+            body.innerHTML = '';
+            records.forEach(d => {
+                const tr = document.createElement('tr');
+                if (selectedTransitIds.has(String(d.id))) tr.classList.add('bg-indigo-500/10');
+                const canReceive = d.transitStatus === 'In Transit' && (['admin','superadmin'].includes(currentUser.role) || currentUser.code === d.transitTo);
+                const safe = v => String(v ?? '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                tr.innerHTML = `<td class="py-3 px-4"><input type="checkbox" class="transit-row-select w-4 h-4 accent-indigo-500" value="${Number(d.id)}" aria-label="Select ${safe(d.tagId)}" ${selectedTransitIds.has(String(d.id))?'checked':''} onchange="toggleTransitRow(${Number(d.id)},this.checked)"></td><td class="py-3 px-4 font-mono">${safe(d.tagId)}</td><td class="py-3 px-4 font-mono">${safe(d.assetId || d.id)}</td><td class="py-3 px-4 font-mono">${safe(d.imei)}</td><td class="py-3 px-4">${safe(d.transitFrom)}</td><td class="py-3 px-4">${safe(d.transitTo)}</td><td class="py-3 px-4"><span class="px-2 py-1 rounded-lg ${d.transitStatus==='Received'?'bg-emerald-500/20 text-emerald-300':d.transitStatus==='In Transit'?'bg-amber-500/20 text-amber-300':'bg-slate-700 text-slate-300'}">${safe(d.transitStatus)}</span></td><td class="py-3 px-4">${safe(d.transitDate)}</td><td class="py-3 px-4">${safe(d.receivedDate)}</td><td class="py-3 px-4">${safe(d.transitNote)}</td><td class="py-3 px-4">${canReceive ? `<button onclick="receiveTransitAsset(${Number(d.id)})" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white">Confirm Received</button>` : '—'}</td>`;
+                body.appendChild(tr);
+            });
+            document.getElementById('transitEmpty').classList.toggle('hidden', records.length !== 0);
+            updateTransitSelectionUI();
+        }
+
+        // --- 7.5 Centers CRUD Module ---
+        // --- Admin Redundancy Scan: duplicates are flagged, never auto-deleted ---
+        function normalizedDuplicateValue(value) {
+            return String(value ?? '').trim().toUpperCase().replace(/\\s+/g, '');
+        }
+
+        function getRedundancyGroups(sourceData = inventoryData) {
+            const groups = [];
+            [
+                { key: 'tagId', label: 'Duplicate Tag ID', get: d => d.tagId },
+                { key: 'imei', label: 'Duplicate IMEI', get: d => d.imei }
+            ].forEach(rule => {
+                const buckets = new Map();
+                sourceData.forEach(d => {
+                    const value = normalizedDuplicateValue(rule.get(d));
+                    if (!value) return;
+                    if (!buckets.has(value)) buckets.set(value, []);
+                    buckets.get(value).push(d);
+                });
+                buckets.forEach((records, value) => {
+                    if (records.length > 1) groups.push({ key: rule.key, label: rule.label, value, records });
+                });
+            });
+            return groups;
+        }
+
+        function renderRedundancy() {
+            if (!currentUser) return;
+            const body = document.getElementById('redundancyTableBody');
+            if (!body) return;
+            const sourceData = ['admin','superadmin'].includes(currentUser.role) ? inventoryData : inventoryData.filter(d => d.location === currentUser.code);
+            const groups = getRedundancyGroups(sourceData);
+            const flaggedIds = new Set();
+            groups.forEach(g => g.records.forEach(d => flaggedIds.add(d.id)));
+            document.getElementById('redundancyGroups').textContent = groups.length;
+            document.getElementById('redundancyRecords').textContent = flaggedIds.size;
+            document.getElementById('redundancyUnique').textContent = Math.max(0, sourceData.length - flaggedIds.size);
+
+            const centerSelect = document.getElementById('redundancyCenter');
+            const selectedCenter = ['admin','superadmin'].includes(currentUser.role) ? centerSelect.value : currentUser.code;
+            const centerOptions = '<option value="">All Centers</option>' +
+                [...new Set(inventoryData.map(d => d.location).filter(Boolean))].sort().map(c =>
+                    `<option value="${String(c).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">${String(c).replace(/</g, '&lt;')}</option>`
+                ).join('');
+            if (centerSelect.dataset.ready !== '1') {
+                centerSelect.innerHTML = centerOptions;
+                centerSelect.dataset.ready = '1';
+            }
+            if (!['admin','superadmin'].includes(currentUser.role)) { centerSelect.value = currentUser.code; centerSelect.disabled = true; }
+            else { centerSelect.disabled = false; if (selectedCenter && [...centerSelect.options].some(o => o.value === selectedCenter)) centerSelect.value = selectedCenter; }
+
+            const type = document.getElementById('redundancyType').value;
+            const search = document.getElementById('redundancySearch').value.trim().toLowerCase();
+            const center = centerSelect.value;
+            const rows = [];
+            groups.filter(g => type === 'all' || g.key === type).forEach(g => {
+                g.records.filter(d => (!center || d.location === center) &&
+                    (!search || [d.tagId, d.imei, d.modelName, d.location, d.projectName].some(v => String(v || '').toLowerCase().includes(search))))
+                    .forEach(d => rows.push({ group: g, device: d }));
+            });
+            body.innerHTML = '';
+            rows.forEach(({group, device:d}) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/60';
+                const safe = v => String(v ?? '-').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                tr.innerHTML = `<td class="py-3 px-4 text-amber-300">${safe(group.label)}</td>
+                    <td class="py-3 px-4 font-mono text-rose-300">${safe(group.value)}</td>
+                    <td class="py-3 px-4">${safe(d.tagId)}</td><td class="py-3 px-4">${safe(d.location)}</td>
+                    <td class="py-3 px-4">${safe(d.modelName)}</td><td class="py-3 px-4 font-mono">${safe(d.imei)}</td>
+                    <td class="py-3 px-4">${safe(d.status)}</td>
+                    <td class="py-3 px-4"><button onclick="editDevice(${Number(d.id)})" class="px-3 py-1.5 rounded-lg bg-primary/20 text-indigo-300 hover:bg-primary hover:text-white">Review / Edit</button></td>`;
+                body.appendChild(tr);
+            });
+            document.getElementById('redundancyEmpty').classList.toggle('hidden', rows.length !== 0);
+        }
+
+        function renderCentersTable() {
+            const tbody = document.getElementById('centersTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            const query = (document.getElementById('centerSearch')?.value || '').trim().toLowerCase();
+            centersData.filter(c => c.configured !== false && (c.code || '').toLowerCase() !== 'admin')
+                .filter(c => !query || [c.code, c.name].some(v => String(v || '').toLowerCase().includes(query)))
+                .forEach((c) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-800/80 transition-colors group cursor-default';
+                row.innerHTML = `
+                    <td class="py-3 px-5 font-mono text-secondary font-bold">${c.code || '-'}</td>
+                    <td class="py-3 px-5 font-semibold text-slate-200">${c.name || '-'}</td>
+                    <td class="py-3 px-5 text-slate-400 font-mono text-xs">•••••••• <span class="text-[10px] text-slate-500">(hidden)</span></td>
+                    <td class="py-3 px-5 text-right opacity-50 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editCenter('${c.code}')" class="w-8 h-8 rounded hover:bg-teal-500/20 text-slate-400 hover:text-teal-400 transition-colors"><i class="fas fa-pen"></i></button>
+                        <button onclick="deleteCenter('${c.code}')" class="w-8 h-8 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function openCenterModal(code = null) {
+            if (!currentUser || !['superadmin','admin'].includes(currentUser.role)) { showToast('Permission Restricted', 'Only Admin or Super Admin can manage centers.', 'error'); return; }
+            const form = document.getElementById('centerForm');
+            form.reset();
+            document.getElementById('editCenterId').value = '';
+            document.getElementById('centerCode').disabled = false;
+            document.getElementById('centerPassword').required = !code;
+            document.getElementById('centerPassword').value = '';
+            document.getElementById('centerModalTitle').innerHTML = '<i class="fas fa-building text-secondary"></i> Add New Center';
+            
+            if (code) {
+                const c = centersData.find(x => x.code === code);
+                if (c) {
+                    document.getElementById('centerModalTitle').innerHTML = '<i class="fas fa-edit text-secondary"></i> Edit Center';
+                    document.getElementById('editCenterId').value = c.code;
+                    document.getElementById('centerCode').value = c.code;
+                    document.getElementById('centerCode').disabled = true; 
+                    document.getElementById('centerName').value = c.name;
+                    document.getElementById('centerPassword').value = '';
+                }
+            }
+
+            const modal = document.getElementById('centerModal');
+            const content = document.getElementById('centerModalContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+        }
+
+        function closeCenterModal() {
+            const modal = document.getElementById('centerModal');
+            const content = document.getElementById('centerModalContent');
+            content.classList.remove('scale-100'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+        }
+
+        async function saveCenter(e) {
+            e.preventDefault();
+            if (!currentUser || !['superadmin','admin'].includes(currentUser.role)) { showToast('Permission Restricted', 'Only Admin or Super Admin can modify center data.', 'error'); return; }
+            if (!centersLoadedFromGAS) { showToast('Center Save Blocked', 'Center accounts could not be loaded from Google Sheets.', 'error'); return; }
+            const editCode = document.getElementById('editCenterId').value;
+            const code = document.getElementById('centerCode').value.trim().toUpperCase();
+            const name = document.getElementById('centerName').value.trim();
+            const password = document.getElementById('centerPassword').value;
+            if (password && password.length < 8) { showToast('Password Too Short', 'Use at least 8 characters.', 'error'); return; }
+            if (!editCode && password.length < 8) { showToast('Password Required', 'Set an initial password of at least 8 characters.', 'error'); return; }
+
+            if (editCode) {
+                const idx = centersData.findIndex(x => x.code === editCode && x.configured !== false);
+                if (idx !== -1) {
+                    centersData[idx].name = name;
+                    centersData[idx].password = password;
+                }
+            } else {
+                if (centersData.some(x => x.code === code && x.configured !== false)) {
+                    showToast('Error', 'Center Code already exists!', 'error');
+                    return;
+                }
+                const index = centersData.findIndex(x => x.code === code && x.configured === false);
+                const row = { code, name, password, role: 'center', configured: true };
+                if (index >= 0) centersData[index] = row; else centersData.push(row);
+            }
+            populateCenterDropdowns();
+            closeCenterModal();
+            renderCentersTable();
+            await pushCentersToGAS();
+        }
+
+        function editCenter(code) {
+            openCenterModal(code);
+        }
+
+        async function deleteCenter(code) {
+            if (!currentUser || !['superadmin','admin'].includes(currentUser.role)) { showToast('Permission Restricted', 'Only Admin or Super Admin can delete centers.', 'error'); return; }
+            if (!centersLoadedFromGAS) { showToast('Delete Blocked', 'Center accounts could not be loaded from Google Sheets.', 'error'); return; }
+            const target = centersData.find(x => x.code === code && x.configured !== false);
+            if (!target) { showToast('No Login Account', 'This center is only a directory placeholder and has no saved login account.', 'error'); return; }
+            if (confirm(`CRITICAL: Remove login access for ${code}? Devices mapped to this center will remain in inventory.`)) {
+                centersData = centersData.filter(x => !(x.code === code && x.configured !== false));
+                populateCenterDropdowns();
+                renderCentersTable();
+                await pushCentersToGAS();
+            }
+        }
+
+        // --- 7.6 Center Analytics Module ---
+        function renderCenterStats() {
+            const tbody = document.getElementById('centerStatsTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            let grandTotal = 0;
+            let grandActive = 0;
+            let grandFaulty = 0;
+
+            centersData.forEach((c) => {
+                if ((c.code || '').toLowerCase() === 'admin') return;
+                
+                const centerDevices = inventoryData.filter(d => d.location === c.code);
+                const total = centerDevices.length;
+                const active = centerDevices.filter(d => (d.status || '').toLowerCase() === 'active').length;
+                const faulty = centerDevices.filter(d => { const stat = (d.status || '').toLowerCase(); return stat.includes('faulty') || stat.includes('repair'); }).length;
+                
+                grandTotal += total;
+                grandActive += active;
+                grandFaulty += faulty;
+
+                const query = (document.getElementById('centerStatsSearch')?.value || '').trim().toLowerCase();
+                if (query && ![c.code, c.name, total, active, faulty].some(v => String(v ?? '').toLowerCase().includes(query))) return;
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-800/80 transition-colors group cursor-default';
+                row.innerHTML = `
+                    <td class="py-3 px-5 font-mono text-secondary font-bold">${c.code}</td>
+                    <td class="py-3 px-5 font-semibold text-slate-200">${c.name}</td>
+                    <td class="py-3 px-5 font-bold text-blue-400">${total}</td>
+                    <td class="py-3 px-5 font-bold text-emerald-400">${active}</td>
+                    <td class="py-3 px-5 font-bold text-rose-400">${faulty}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'bg-slate-800/50 font-black border-t-2 border-slate-700';
+            totalRow.innerHTML = `
+                <td class="py-4 px-5 font-mono text-white uppercase tracking-wider" colspan="2">Global Grand Total</td>
+                <td class="py-4 px-5 text-blue-400">${grandTotal}</td>
+                <td class="py-4 px-5 text-emerald-400">${grandActive}</td>
+                <td class="py-4 px-5 text-rose-400">${grandFaulty}</td>
+            `;
+            tbody.appendChild(totalRow);
+        }
+
+        // --- 8. Integration Hub (Excel & GAS) ---
+        function logSync(msg) {
+            const consoleEl = document.getElementById('syncConsole');
+            if(!consoleEl) return;
+            const time = new Date().toLocaleTimeString();
+            consoleEl.innerHTML += `<br><span class="text-slate-500">[${time}]</span> ${msg}`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        async function pullFromGAS() {
+            logSync('Fetching data from GAS backend...');
+            document.getElementById('globalLoader').classList.remove('hidden');
+            document.getElementById('globalLoader').classList.add('flex');
+            try {
+                const result = await apiRequest('read');
+                
+                if (result.status === 'success' && Array.isArray(result.data)) {
+                    inventoryData = result.data.map((row, idx) => ({
+                        id: Date.now() + idx,
+                        sNo: row['S No'] || row['sNo'] || idx + 1,
+                        tagId: row['Tag ID'] || row['tagId'] || '',
+                        location: row['Location'] || row['location'] || 'RCR',
+                        projectName: row['Project Name'] || row['projectName'] || '',
+                        modelName: row['Model Name'] || row['modelName'] || '',
+                        supplier: row['Supplier'] || '',
+                        imei: row['IMEI 1'] || row['IMEI'] || row['imei'] || '',
+                        status: row['Device Status'] || row['Status'] || row['status'] || 'Active',
+                        storage: row['Storage'] || '',
+                        color: row['Mobile Color'] || row['color'] || '',
+                        lastEditedBy: row['Last Edited By'] || row['lastEditedBy'] || '',
+                        lastEditedTime: row['Last Edited Time'] || row['lastEditedTime'] || '',
+                        transitStatus: row['Transit Status'] || row['transitStatus'] || '',
+                        transitFrom: row['Transit From'] || row['transitFrom'] || '',
+                        transitTo: row['Transit To'] || row['transitTo'] || '',
+                        transitDate: row['Transit Date'] || row['transitDate'] || '',
+                        receivedDate: row['Received Date'] || row['receivedDate'] || '',
+                        transitNote: row['Transit Remarks'] || row['transitNote'] || ''
+                    }));
+                    saveToLocal();
+                    if (document.getElementById('view-inventory').classList.contains('flex')) renderTable();
+                    if (document.getElementById('view-dashboard').classList.contains('block') || !document.getElementById('view-dashboard').classList.contains('hidden')) renderDashboard();
+                    logSync(`Pull complete. Loaded ${inventoryData.length} records.`);
+                    showToast('Sync Complete', 'Data successfully pulled from cloud.', 'success');
+                }
+            } catch (err) {
+                logSync(`HTTP Error: ${err.message}`);
+            } finally {
+                document.getElementById('globalLoader').classList.add('hidden');
+                document.getElementById('globalLoader').classList.remove('flex');
+            }
+        }
+
+        async function pushToGAS() {
+            if (!currentUser || !['superadmin','admin'].includes(currentUser.role)) { showToast('Permission Restricted', 'Only Admin or Super Admin can write cloud inventory.', 'error'); return; }
+            logSync('Transmitting data to GAS...');
+            document.getElementById('globalLoader').classList.remove('hidden');
+            document.getElementById('globalLoader').classList.add('flex');
+            const exportData = inventoryData.map(d => ({
+                'S No': d.sNo || '', 'Tag ID': d.tagId || '', 'Location': d.location || '', 
+                'Project Name': d.projectName || '', 'Model Name': d.modelName || '', 
+                'Supplier': d.supplier || '', 'IMEI 1': d.imei || '', 'Storage': d.storage || '', 
+                'Mobile Color': d.color || '', 'Device Status': d.status || '',
+                'Last Edited By': d.lastEditedBy || '',
+                'Last Edited Time': d.lastEditedTime || '',
+                'Transit Status': d.transitStatus || '', 'Transit From': d.transitFrom || '',
+                'Transit To': d.transitTo || '', 'Transit Date': d.transitDate || '',
+                'Received Date': d.receivedDate || '', 'Transit Remarks': d.transitNote || ''
+            }));
+
+            try {
+                const result = await apiRequest('write', { data: exportData });
+                if (result.status !== 'success') throw new Error(result.message || 'Cloud write failed.');
+                if (result.status === 'success') {
+                    logSync('Google Sheet sync successful.');
+                    showToast('Cloud Sync Complete', 'Data safely stored.', 'success');
+                }
+            } catch (err) {
+                logSync(`Transmission Error: ${err.message}`);
+            } finally {
+                document.getElementById('globalLoader').classList.add('hidden');
+                document.getElementById('globalLoader').classList.remove('flex');
+            }
+        }
+
+        function setupDropZone() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            if(!dropZone || !fileInput) return;
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            ['dragleave', 'dragend'].forEach(type => { dropZone.addEventListener(type, () => dropZone.classList.remove('dragover')); });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault(); dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+            });
+            fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+        }
+
+        function handleFile(file) {
+            if (!currentUser || currentUser.role !== 'superadmin') { showToast('Permission Restricted', 'Only Super Admin can import or overwrite data.', 'error'); return; }
+            logSync(`Reading ${file.name}...`);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    let sheetName = workbook.SheetNames.includes('Master_Inventory_Data') ? 'Master_Inventory_Data' : workbook.SheetNames[0];
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                    
+                    if(json.length > 0) {
+                        inventoryData = json.map((row, idx) => ({
+                            id: Date.now() + idx,
+                            sNo: row['S No'] || idx + 1,
+                            tagId: row['Tag ID'] || '',
+                            location: row['Location'] || 'UNKNOWN',
+                            projectName: row['Project Name'] || '',
+                            modelName: row['Model Name'] || '',
+                            supplier: row['Supplier'] || '',
+                            imei: row['IMEI 1'] || row['Serial No'] || row['IMEI'] || '',
+                            status: row['Device Status'] || 'Active',
+                            storage: row['Storage'] || '',
+                            color: row['Mobile Color'] || ''
+                        })).filter(d => d.tagId !== ''); 
+
+                        saveToLocal();
+                        logSync(`Import loaded ${inventoryData.length} records.`);
+                        showToast('Import Complete', `Loaded ${inventoryData.length} devices.`, 'success');
+                    }
+                } catch (error) {
+                    showToast('Import Failed', 'Failed to read file.', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportToExcel() {
+            const exportArr = inventoryData.map(d => ({
+                'S No': d.sNo || '', 'Tag ID': d.tagId || '', 'Project Name': d.projectName || '', 'Model Name': d.modelName || '',
+                'Supplier': d.supplier || '', 'Location': d.location || '', 'IMEI 1': d.imei || '', 'Storage': d.storage || '',
+                'Mobile Color': d.color || '', 'Device Status': d.status || '', 'Last Edited By': d.lastEditedBy || '', 'Last Edited Time': d.lastEditedTime || ''
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(exportArr);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Master_Inventory_Data");
+            XLSX.writeFile(workbook, `T_and_M_Inventory_Export_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast('Export Complete', 'File downloaded.', 'success');
+        }
+
+        // --- Security settings: server-verified TOTP and local convenience lock ---
+        async function openSecuritySettings() {
+            if (!currentUser) return;
+            const modal = document.getElementById('securityModal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            document.getElementById('totpSetupPanel').classList.add('hidden');
+            document.getElementById('recoveryCodesPanel').classList.add('hidden');
+            document.getElementById('disableTotpPanel').classList.add('hidden');
+            const mode = localStorage.getItem(localLockModeKey()) || 'none';
+            document.getElementById('quickLockMode').value = mode;
+            await refreshSecurityStatus();
+        }
+
+        function closeSecuritySettings() {
+            const modal = document.getElementById('securityModal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+            document.getElementById('totpQrCode').innerHTML = '';
+            document.getElementById('totpManualSecret').textContent = '';
+            document.getElementById('enrollTotpCode').value = '';
+        }
+
+        async function refreshSecurityStatus() {
+            const status = document.getElementById('authenticatorStatus');
+            const begin = document.getElementById('beginTotpBtn');
+            status.textContent = 'Checking enrollment status…';
+            try {
+                const result = await apiRequest('get_security_status');
+                if (result.status !== 'success') throw new Error(result.message || 'Could not read security status.');
+                const enabled = !!result.data.totpEnabled;
+                status.textContent = enabled
+                    ? `Google Authenticator is enabled. ${result.data.recoveryCodesRemaining} recovery code(s) remain.`
+                    : 'Google Authenticator is not enabled for this account.';
+                begin.classList.toggle('hidden', enabled);
+                document.getElementById('disableTotpPanel').classList.toggle('hidden', !enabled);
+            } catch (err) {
+                status.textContent = err.message || 'Could not read security status.';
+                begin.classList.add('hidden');
+            }
+        }
+
+        async function beginAuthenticatorSetup() {
+            try {
+                const result = await apiRequest('begin_totp_setup');
+                if (result.status !== 'success') throw new Error(result.message || 'Could not start authenticator setup.');
+                const data = result.data;
+                document.getElementById('totpQrCode').innerHTML = '';
+                if (window.QRCode) {
+                    new QRCode(document.getElementById('totpQrCode'), { text: data.otpauthUrl, width: 190, height: 190, correctLevel: QRCode.CorrectLevel.M });
+                } else {
+                    document.getElementById('totpQrCode').textContent = 'QR library unavailable; use the manual key below.';
+                }
+                document.getElementById('totpManualSecret').textContent = data.secret;
+                document.getElementById('totpSetupPanel').classList.remove('hidden');
+                document.getElementById('recoveryCodesPanel').classList.add('hidden');
+                document.getElementById('enrollTotpCode').value = '';
+                showToast('Setup Started', 'Scan the QR code and enter the current six-digit code.', 'success');
+            } catch (err) {
+                showToast('Authenticator Setup Failed', err.message || 'Unable to start setup.', 'error');
+            }
+        }
+
+        async function confirmAuthenticatorSetup(e) {
+            e.preventDefault();
+            const button = document.getElementById('confirmTotpBtn');
+            button.disabled = true;
+            try {
+                const result = await apiRequest('confirm_totp_setup', { code: document.getElementById('enrollTotpCode').value.trim() });
+                if (result.status !== 'success') throw new Error(result.message || 'Authenticator confirmation failed.');
+                document.getElementById('totpSetupPanel').classList.add('hidden');
+                document.getElementById('recoveryCodesText').textContent = (result.data.recoveryCodes || []).join('\n');
+                document.getElementById('recoveryCodesPanel').classList.remove('hidden');
+                await refreshSecurityStatus();
+                showToast('Two-Factor Authentication Enabled', 'Save the recovery codes before closing this window.', 'success');
+            } catch (err) {
+                showToast('Confirmation Failed', err.message || 'Incorrect authenticator code.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function disableAuthenticator() {
+            const code = document.getElementById('disableTotpCode').value.trim();
+            if (!/^\d{6}$/.test(code)) { showToast('Code Required', 'Enter the current six-digit Authenticator code.', 'error'); return; }
+            if (!confirm('Disable Google Authenticator for this account? Sign-in will no longer require the second step.')) return;
+            try {
+                const result = await apiRequest('disable_totp', { code });
+                if (result.status !== 'success') throw new Error(result.message || 'Could not disable Authenticator.');
+                document.getElementById('disableTotpCode').value = '';
+                document.getElementById('recoveryCodesPanel').classList.add('hidden');
+                await refreshSecurityStatus();
+                showToast('Authenticator Disabled', result.message || 'Two-factor authentication disabled.', 'success');
+            } catch (err) {
+                showToast('Disable Failed', err.message || 'Could not disable Authenticator.', 'error');
+            }
+        }
+
+        async function copyRecoveryCodes() {
+            const text = document.getElementById('recoveryCodesText').textContent;
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('Copied', 'Recovery codes copied. Store them securely.', 'success');
+            } catch (_) {
+                showToast('Copy Not Available', 'Select the recovery codes and copy them manually.', 'error');
+            }
+        }
+
+        function userKey() { return String(currentUser && currentUser.username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '_'); }
+        function localLockModeKey() { return 'crm_local_lock_mode_' + userKey(); }
+        function localLockProfileKey(mode) { return 'crm_local_lock_' + userKey() + '_' + mode; }
+        function getLocalLockProfile(mode) {
+            try { return JSON.parse(localStorage.getItem(localLockProfileKey(mode)) || 'null'); } catch (_) { return null; }
+        }
+        function randomLocalSalt() {
+            const bytes = new Uint8Array(16);
+            if (!window.crypto || !crypto.getRandomValues) throw new Error('Secure browser cryptography is not available.');
+            crypto.getRandomValues(bytes);
+            return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        async function localSecretHash(secret, salt) {
+            if (!window.crypto || !crypto.subtle) throw new Error('Open this CRM on a secure HTTPS page to configure a PIN or pattern.');
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(String(secret)), 'PBKDF2', false, ['deriveBits']);
+            const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: encoder.encode(String(salt)), iterations: 100000, hash: 'SHA-256' }, keyMaterial, 256);
+            return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        async function saveLocalSecret(mode, secret) {
+            const salt = randomLocalSalt();
+            const hash = await localSecretHash(secret, salt);
+            localStorage.setItem(localLockProfileKey(mode), JSON.stringify({ salt, hash }));
+            localStorage.setItem(localLockModeKey(), mode);
+            const modeSelect = document.getElementById('quickLockMode');
+            if (modeSelect) modeSelect.value = mode;
+            resetIdleTimer();
+        }
+        async function verifyLocalSecret(mode, secret) {
+            const profile = getLocalLockProfile(mode);
+            if (!profile || !profile.salt || !profile.hash) return false;
+            return (await localSecretHash(secret, profile.salt)) === profile.hash;
+        }
+
+        async function saveLocalPin() {
+            const pin = document.getElementById('pinSetupInput').value.trim();
+            if (!/^\d{4,8}$/.test(pin)) { showToast('Invalid PIN', 'PIN must contain 4–8 digits.', 'error'); return; }
+            try {
+                await saveLocalSecret('pin', pin);
+                document.getElementById('pinSetupInput').value = '';
+                showToast('PIN Saved', 'PIN lock is now selected for this browser.', 'success');
+            } catch (err) { showToast('PIN Setup Failed', err.message, 'error'); }
+        }
+
+        function startPatternSetup() {
+            patternSetupStage = 'first'; firstPatternPath = null; setupPatternPath = [];
+            updatePatternDots('setup', setupPatternPath);
+            document.getElementById('patternSetupStatus').textContent = 'Select at least 4 dots in your pattern, then tap Save / Confirm pattern.';
+        }
+        function selectSetupPatternDot(dot) {
+            if (patternSetupStage === 'idle') { showToast('Start Setup', 'Tap Start pattern setup first.', 'info'); return; }
+            if (!setupPatternPath.includes(dot)) setupPatternPath.push(dot);
+            updatePatternDots('setup', setupPatternPath);
+            document.getElementById('patternSetupStatus').textContent = `Selected ${setupPatternPath.length} dot(s). Keep selecting dots in order.`;
+        }
+        async function savePatternSetup() {
+            if (patternSetupStage === 'idle') { startPatternSetup(); return; }
+            if (setupPatternPath.length < 4) { showToast('Pattern Too Short', 'Select at least 4 different dots.', 'error'); return; }
+            if (patternSetupStage === 'first') {
+                firstPatternPath = setupPatternPath.slice();
+                setupPatternPath = [];
+                patternSetupStage = 'confirm';
+                updatePatternDots('setup', setupPatternPath);
+                document.getElementById('patternSetupStatus').textContent = 'Now repeat the same pattern and tap Save / Confirm pattern.';
+                return;
+            }
+            if (setupPatternPath.join('-') !== firstPatternPath.join('-')) {
+                patternSetupStage = 'first'; firstPatternPath = null; setupPatternPath = [];
+                updatePatternDots('setup', setupPatternPath);
+                document.getElementById('patternSetupStatus').textContent = 'Patterns did not match. Start again.';
+                showToast('Pattern Mismatch', 'Please start pattern setup again.', 'error');
+                return;
+            }
+            try {
+                await saveLocalSecret('pattern', setupPatternPath.join('-'));
+                patternSetupStage = 'idle'; firstPatternPath = null; setupPatternPath = [];
+                updatePatternDots('setup', setupPatternPath);
+                document.getElementById('patternSetupStatus').textContent = 'Pattern saved and selected for this browser.';
+                showToast('Pattern Saved', 'Pattern lock is enabled for this browser.', 'success');
+            } catch (err) { showToast('Pattern Setup Failed', err.message, 'error'); }
+        }
+        function clearPatternSetup() {
+            setupPatternPath = [];
+            updatePatternDots('setup', setupPatternPath);
+        }
+        function updatePatternDots(kind, selected) {
+            const attr = kind === 'setup' ? 'data-pattern-setup' : 'data-pattern-lock';
+            document.querySelectorAll(`[${attr}]`).forEach(button => {
+                const n = Number(button.getAttribute(attr));
+                button.classList.toggle('bg-indigo-500', selected.includes(n));
+                button.classList.toggle('border-indigo-300', selected.includes(n));
+                button.classList.toggle('bg-slate-800', !selected.includes(n));
+            });
+        }
+        function saveQuickLockMode() {
+            const mode = document.getElementById('quickLockMode').value;
+            if (mode !== 'none' && !getLocalLockProfile(mode)) {
+                showToast('Configure Lock First', `Save a ${mode} before selecting it.`, 'error'); return;
+            }
+            localStorage.setItem(localLockModeKey(), mode);
+            resetIdleTimer();
+            showToast('Quick Lock Saved', mode === 'none' ? 'Idle lock is disabled.' : `CRM will lock after 5 minutes of inactivity using ${mode}.`, 'success');
+        }
+        function removeLocalLock(mode) {
+            localStorage.removeItem(localLockProfileKey(mode));
+            if ((localStorage.getItem(localLockModeKey()) || 'none') === mode) localStorage.setItem(localLockModeKey(), 'none');
+            const modeSelect = document.getElementById('quickLockMode');
+            if (modeSelect && modeSelect.value === mode) modeSelect.value = 'none';
+            resetIdleTimer();
+            showToast('Local Lock Removed', `Saved ${mode} removed from this browser.`, 'success');
+        }
+        function initLocalLockActivity() {
+            ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'].forEach(eventName => {
+                document.addEventListener(eventName, () => { if (!localLockActive) resetIdleTimer(); }, { passive: true });
+            });
+        }
+        function resetIdleTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = null;
+            return; // PIN/pattern idle locks have been removed; server session remains authoritative.
+            if (!currentUser || localLockActive) return;
+            const mode = localStorage.getItem(localLockModeKey()) || 'none';
+            if (mode === 'none' || !getLocalLockProfile(mode)) return;
+            inactivityTimer = setTimeout(showLocalLock, IDLE_LOCK_MS);
+        }
+        function showLocalLock() {
+            return; // PIN/pattern lock removed.
+            if (!currentUser) return;
+            const mode = localStorage.getItem(localLockModeKey()) || 'none';
+            if (mode === 'none' || !getLocalLockProfile(mode)) return;
+            localLockActive = true;
+            document.getElementById('localLockOverlay').classList.remove('hidden');
+            document.getElementById('localLockOverlay').classList.add('flex');
+            document.getElementById('lockPinPanel').classList.toggle('hidden', mode !== 'pin');
+            document.getElementById('lockPatternPanel').classList.toggle('hidden', mode !== 'pattern');
+            document.getElementById('localLockMessage').textContent = `This browser is locked. Use your saved ${mode} to continue.`;
+            document.getElementById('unlockPinInput').value = '';
+            clearUnlockPattern();
+            if (mode === 'pin') setTimeout(() => document.getElementById('unlockPinInput').focus(), 50);
+        }
+        async function verifyLocalPinUnlock() {
+            try {
+                const ok = await verifyLocalSecret('pin', document.getElementById('unlockPinInput').value.trim());
+                if (!ok) { recordLocalLockFailure(); showToast('Incorrect PIN', 'Please try again or sign out.', 'error'); return; }
+                finishLocalUnlock();
+            } catch (err) { showToast('Unlock Failed', err.message, 'error'); }
+        }
+        function selectUnlockPatternDot(dot) {
+            if (!unlockPatternPath.includes(dot)) unlockPatternPath.push(dot);
+            updatePatternDots('lock', unlockPatternPath);
+            document.getElementById('unlockPatternStatus').textContent = `${unlockPatternPath.length} dot(s) selected.`;
+        }
+        function clearUnlockPattern() {
+            unlockPatternPath = [];
+            updatePatternDots('lock', unlockPatternPath);
+            const status = document.getElementById('unlockPatternStatus');
+            if (status) status.textContent = 'Tap at least 4 dots in order.';
+        }
+        async function verifyLocalPatternUnlock() {
+            if (unlockPatternPath.length < 4) { showToast('Pattern Too Short', 'Tap at least 4 different dots.', 'error'); return; }
+            try {
+                const ok = await verifyLocalSecret('pattern', unlockPatternPath.join('-'));
+                if (!ok) { clearUnlockPattern(); recordLocalLockFailure(); showToast('Incorrect Pattern', 'Please try again or sign out.', 'error'); return; }
+                finishLocalUnlock();
+            } catch (err) { showToast('Unlock Failed', err.message, 'error'); }
+        }
+        function localLockFailureKey() { return 'crm_local_lock_failures_' + userKey(); }
+        function recordLocalLockFailure() {
+            const key = localLockFailureKey();
+            const count = Number(sessionStorage.getItem(key) || 0) + 1;
+            sessionStorage.setItem(key, String(count));
+            if (count >= 5) {
+                showToast('Unlock Attempts Exceeded', 'Signing out after 5 incorrect attempts.', 'error');
+                setTimeout(() => logout(), 700);
+            }
+        }
+        function finishLocalUnlock() {
+            sessionStorage.removeItem(localLockFailureKey());
+            localLockActive = false;
+            document.getElementById('localLockOverlay').classList.add('hidden');
+            document.getElementById('localLockOverlay').classList.remove('flex');
+            clearTimeout(inactivityTimer);
+            resetIdleTimer();
+            showToast('Unlocked', 'You may continue using the CRM.', 'success');
+        }
+
+        function showToast(title, msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            if(!toast) return;
+            document.getElementById('toastTitle').innerText = title;
+            document.getElementById('toastMsg').innerText = msg;
+            const icon = document.getElementById('toastIcon');
+            toast.className = 'fixed top-5 right-5 z-[250] transform transition-transform duration-300 px-5 py-4 rounded-xl shadow-2xl flex items-center gap-4 min-w-[300px] border-l-4';
+            if (type === 'success') { toast.classList.add('bg-slate-800', 'border-emerald-500', 'text-white'); icon.className = 'fas fa-check-circle text-emerald-400 text-2xl'; } 
+            else if (type === 'error') { toast.classList.add('bg-slate-800', 'border-rose-500', 'text-white'); icon.className = 'fas fa-exclamation-triangle text-rose-400 text-2xl'; } 
+            else { toast.classList.add('bg-slate-800', 'border-primary', 'text-white'); icon.className = 'fas fa-info-circle text-primary text-2xl'; }
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => toast.classList.add('translate-x-full'), 3500);
+        }
+    </script>
+</body>
+</html>
