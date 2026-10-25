@@ -1,0 +1,17 @@
+IPH CRM — Faster Cloud Sync
+
+What changed:
+- Normal Add/Edit Asset saves only the single asset row using the new `save_asset` endpoint.
+- It no longer uploads the whole inventory for every add/edit.
+- Center users remain restricted to assets in their own center.
+- Asset transit columns are not editable through the single-asset endpoint.
+- Manual/full sync remains available through the existing `write` endpoint.
+
+Install:
+1. Back up the existing Code.gs and frontend HTML.
+2. Replace Code.gs with IPH_CRM_Fast_Sync_Code.gs.
+3. Replace the CRM HTML with IPH_CRM_Fast_Sync_Frontend.html (or copy its changed saveDevice function into the deployed HTML).
+4. Save and deploy a new web-app version. Ensure the frontend uses the same GAS_URL deployment.
+5. Test adding and editing one asset, then verify its row in Master_Inventory_Data.
+
+Note: The code was syntax-checked but not tested against your live spreadsheet. Bulk/manual sync still writes more data and may take longer; normal Add/Edit is now single-row.
