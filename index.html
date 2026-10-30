@@ -77,6 +77,41 @@
             border-color: rgba(255, 255, 255, 0.1) !important;
         }
         
+        /* Consistent page headers for major inventory modules */
+        .page-heading {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 4px 0 8px;
+        }
+        .page-heading .heading-icon {
+            width: 46px; height: 46px; flex: 0 0 46px;
+            display: grid; place-items: center; border-radius: 14px;
+            color: #c7d2fe; font-size: 18px;
+            background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(20,184,166,.12));
+            border: 1px solid rgba(129,140,248,.28);
+            box-shadow: 0 8px 24px rgba(79,70,229,.14);
+        }
+        .page-heading h1 { font-size: clamp(1.55rem, 2.2vw, 2rem); line-height: 1.15; letter-spacing: -.04em; }
+        .page-heading p { color: #94a3b8; font-size: 12px; margin-top: 5px; }
+        .page-heading .heading-kicker {
+            display: block; color: #818cf8; font-size: 9px; font-weight: 800;
+            letter-spacing: .18em; text-transform: uppercase; margin-bottom: 4px;
+        }
+        .page-heading .heading-copy { min-width: 0; }
+        .page-heading .heading-accent {
+            width: 54px; height: 3px; border-radius: 99px; margin-top: 9px;
+            background: linear-gradient(90deg, #6366f1, #14b8a6);
+        }
+        .transit-action-group { display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+        .transit-action-group button { white-space:nowrap; font-size:11px; font-weight:800; padding:7px 10px; border-radius:9px; transition:all .18s ease; }
+        .transit-action-group button:disabled { opacity:.5; cursor:not-allowed; }
+        @media (max-width: 640px) {
+            .page-heading { align-items:flex-start; }
+            .page-heading .heading-icon { width:40px; height:40px; flex-basis:40px; }
+        }
+
         /* Drag and Drop Zone Styles */
         .drop-zone { border: 2px dashed rgba(255,255,255,0.2); transition: all 0.3s ease; }
         .drop-zone.dragover { border-color: #6366f1; background-color: rgba(99, 102, 241, 0.2); }
@@ -290,10 +325,15 @@
 
                 <!-- 2. INVENTORY CRUD VIEW -->
                 <div id="view-inventory" class="view-section hidden flex flex-col h-full min-h-[calc(100vh-6rem)]">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <div>
-                            <h1 class="text-3xl font-bold text-white tracking-tight">Master Inventory</h1>
-                            <p class="text-slate-400 text-sm mt-1">Search, modify, and track all mobile assets.</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-7">
+                        <div class="page-heading">
+                            <div class="heading-icon"><i class="fas fa-boxes-stacked"></i></div>
+                            <div class="heading-copy">
+                                <span class="heading-kicker">Asset Management</span>
+                                <h1 class="font-extrabold text-white">Master Inventory</h1>
+                                <p>Search, modify, filter, and track all mobile assets across centers.</p>
+                                <div class="heading-accent"></div>
+                            </div>
                         </div>
                         <div class="flex items-center gap-3 flex-wrap">
                             <!-- Bulk Actions Container -->
@@ -386,10 +426,15 @@
 
                 <!-- ADMIN ONLY: REDUNDANCY FILTER -->
                 <div id="view-redundancy" class="view-section hidden flex-col h-full min-h-[calc(100vh-6rem)]">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <div>
-                            <h1 class="text-3xl font-bold text-white tracking-tight">Redundancy Filter</h1>
-                            <p class="text-slate-400 text-sm mt-1">Find possible duplicate inventory records by Tag ID or IMEI. Review records before editing or deleting.</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-7">
+                        <div class="page-heading">
+                            <div class="heading-icon"><i class="fas fa-clone"></i></div>
+                            <div class="heading-copy">
+                                <span class="heading-kicker">Data Quality &amp; Validation</span>
+                                <h1 class="font-extrabold text-white">Redundancy Filter</h1>
+                                <p>Detect duplicate Tag IDs and IMEIs. Review each flagged record before making changes.</p>
+                                <div class="heading-accent"></div>
+                            </div>
                         </div>
                         <button onclick="renderRedundancy()" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-primary hover:bg-indigo-500 text-white"><i class="fas fa-sync-alt mr-2"></i>Refresh Scan</button>
                     </div>
@@ -430,7 +475,12 @@
                             <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Search &amp; Select Asset (all eligible assets)</label><input id="transitAssetSearch" type="search" oninput="refreshTransitAssets()" placeholder="Search Tag ID, IMEI, model or Asset ID..." autocomplete="off" class="w-full rounded-xl py-2.5 px-3 mb-2 text-sm text-white"><select id="transitAsset" required class="w-full rounded-xl py-2.5 px-3 text-sm text-white"><option value="">Search and select an asset...</option></select><p id="transitAssetMatchCount" class="text-xs text-slate-400 mt-1">Choose an asset to mark it for transfer.</p></div>
                             <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">From Center</label><select id="transitFrom" required onchange="refreshTransitAssets()" class="w-full rounded-xl py-2.5 px-3 text-sm text-white"></select></div>
                             <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">To Center</label><select id="transitTo" required class="w-full rounded-xl py-2.5 px-3 text-sm text-white"></select></div>
-                            <div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Transit Status</label><select id="transitStatus" required class="w-full rounded-xl py-2.5 px-3 text-sm text-white"><option value="In Transit">In Transit</option><option value="Received">Received</option><option value="Cancelled">Cancelled</option></select></div>
+                            <div><label class="block text-xs font-bold text-slate-400 mb-2">TRANSIT STATUS</label>
+                            <input type="hidden" id="transitStatus" name="transitStatus" value="In Transit">
+                            <div class="w-full rounded-xl py-2.5 px-3 text-sm text-white bg-slate-900/70 border border-slate-700 flex items-center justify-between">
+                                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-400"></span>In Transit</span>
+                                <span class="text-[10px] uppercase tracking-wider text-slate-500">Default</span>
+                            </div></div>
                             <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Remarks / Handover Reference</label><input id="transitNote" type="text" placeholder="Courier, handover note, approval reference..." class="w-full rounded-xl py-2.5 px-3 text-sm text-white"></div>
                             <div class="flex items-end"><button type="submit" class="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-500 text-white font-bold py-2.5 rounded-xl"><i class="fas fa-save mr-2"></i>Save Transfer</button></div>
                         </form>
@@ -1444,6 +1494,7 @@
                         <td class="py-3 px-5 text-slate-400 font-medium">${d.sNo || '-'}</td>
                         <td class="py-3 px-5 font-mono text-primary font-bold">${d.tagId || '-'}</td>
                         <td class="py-3 px-5"><span class="bg-slate-800 text-[10px] px-2 py-1 rounded border border-slate-600 font-bold">${d.location || 'UNKN'}</span></td>
+                        <td class="py-3 px-5 font-semibold text-slate-200">${d.assetDate || d.receivedDate || (d.transitReceivedAt ? String(d.transitReceivedAt).slice(0,10) : '-')}</td>
                         <td class="py-3 px-5 font-semibold text-slate-200">${d.modelName || '-'}</td>
                         <td class="py-3 px-5 text-slate-400 text-xs font-semibold">${d.projectName || '-'}</td>
                         <td class="py-3 px-5 font-mono text-xs text-slate-500 group-hover:text-slate-300 transition-colors">${d.imei || '-'}</td>
@@ -1833,6 +1884,9 @@
             if (status === 'In Transit' && String(synced.transitStatus || '').trim() !== 'In Transit') {
                 throw new Error('Transfer request returned, but refreshed inventory does not show In Transit. Check the Google Sheet and deployment.');
             }
+            if (status === 'Cancelled' && String(synced.transitStatus || '').trim() !== 'Cancelled') {
+                throw new Error('Cancellation request returned, but refreshed inventory does not show Cancelled. Check the deployed Apps Script version and Google Sheet row.');
+            }
             populateTransitDropdowns();
             renderTransitTable();
             return result;
@@ -1854,6 +1908,7 @@
             try {
                 await submitTransitUpdate(d, status, from, to, note);
                 document.getElementById('transitForm').reset();
+                document.getElementById('transitStatus').value = 'In Transit';
                 const assetSearch = document.getElementById('transitAssetSearch'); if (assetSearch) assetSearch.value = '';
                 populateTransitDropdowns(); renderTransitTable();
                 showToast('Transfer Updated', status === 'Received' ? 'Asset receipt was saved to Google Sheets.' : `Transfer status saved: ${status}.`, 'success');
@@ -1874,6 +1929,23 @@
                 showToast('Received', `Asset ${d.tagId || d.imei} receipt was saved to Google Sheets.`, 'success');
             } catch (err) {
                 showToast('Receive Failed', err.message || 'Could not confirm receipt.', 'error');
+            }
+        }
+        async function cancelTransitAsset(id) {
+            const d = inventoryData.find(x => Number(x.id) === Number(id));
+            if (!d || d.transitStatus !== 'In Transit') return;
+            if (!['admin','superadmin'].includes(currentUser.role) && currentUser.code !== d.transitFrom) {
+                showToast('Access Denied', 'Only the sending center or Admin can cancel this pending transfer.', 'error');
+                return;
+            }
+            const reference = d.tagId || d.imei || d.assetId || id;
+            if (!window.confirm(`Cancel the pending transfer for ${reference}? The asset will remain assigned to ${d.transitFrom || 'the source center'}.`)) return;
+            try {
+                const note = [d.transitNote || '', 'Transfer cancelled'].filter(Boolean).join(' | ');
+                await submitTransitUpdate(d, 'Cancelled', d.transitFrom, d.transitTo, note);
+                showToast('Transfer Cancelled', `Transfer for ${reference} was cancelled.`, 'success');
+            } catch (err) {
+                showToast('Cancel Failed', err.message || 'Could not cancel the transfer.', 'error');
             }
         }
         // Transit row selection is for marking records for review; it does not alter asset status.
@@ -1914,8 +1986,14 @@
                 const tr = document.createElement('tr');
                 if (selectedTransitIds.has(String(d.id))) tr.classList.add('bg-indigo-500/10');
                 const canReceive = d.transitStatus === 'In Transit' && (['admin','superadmin'].includes(currentUser.role) || currentUser.code === d.transitTo);
+                const canCancel = d.transitStatus === 'In Transit' && (['admin','superadmin'].includes(currentUser.role) || currentUser.code === d.transitFrom);
                 const safe = v => String(v ?? '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-                tr.innerHTML = `<td class="py-3 px-4"><input type="checkbox" class="transit-row-select w-4 h-4 accent-indigo-500" value="${Number(d.id)}" aria-label="Select ${safe(d.tagId)}" ${selectedTransitIds.has(String(d.id))?'checked':''} onchange="toggleTransitRow(${Number(d.id)},this.checked)"></td><td class="py-3 px-4 font-mono">${safe(d.tagId)}</td><td class="py-3 px-4 font-mono">${safe(d.assetId || d.id)}</td><td class="py-3 px-4 font-mono">${safe(d.imei)}</td><td class="py-3 px-4">${safe(d.transitFrom)}</td><td class="py-3 px-4">${safe(d.transitTo)}</td><td class="py-3 px-4"><span class="px-2 py-1 rounded-lg ${d.transitStatus==='Received'?'bg-emerald-500/20 text-emerald-300':d.transitStatus==='In Transit'?'bg-amber-500/20 text-amber-300':'bg-slate-700 text-slate-300'}">${safe(d.transitStatus)}</span></td><td class="py-3 px-4">${safe(d.transitDate)}</td><td class="py-3 px-4">${safe(d.receivedDate)}</td><td class="py-3 px-4">${safe(d.transitNote)}</td><td class="py-3 px-4">${canReceive ? `<button onclick="receiveTransitAsset(${Number(d.id)})" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white">Confirm Received</button>` : '—'}</td>`;
+                const actionButtons = `<div class="transit-action-group">
+                    ${canReceive ? `<button type="button" onclick="receiveTransitAsset(${Number(d.id)})" class="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white"><i class="fas fa-check-circle mr-1"></i>Confirm Received</button>` : ''}
+                    ${canCancel ? `<button type="button" onclick="cancelTransitAsset(${Number(d.id)})" class="bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white"><i class="fas fa-times-circle mr-1"></i>Cancel</button>` : ''}
+                    ${!canReceive && !canCancel ? '<span class="text-slate-500">—</span>' : ''}
+                </div>`;
+                tr.innerHTML = `<td class="py-3 px-4"><input type="checkbox" class="transit-row-select w-4 h-4 accent-indigo-500" value="${Number(d.id)}" aria-label="Select ${safe(d.tagId)}" ${selectedTransitIds.has(String(d.id))?'checked':''} onchange="toggleTransitRow(${Number(d.id)},this.checked)"></td><td class="py-3 px-4 font-mono">${safe(d.tagId)}</td><td class="py-3 px-4 font-mono">${safe(d.assetId || d.id)}</td><td class="py-3 px-4 font-mono">${safe(d.imei)}</td><td class="py-3 px-4">${safe(d.transitFrom)}</td><td class="py-3 px-4">${safe(d.transitTo)}</td><td class="py-3 px-4"><span class="px-2 py-1 rounded-lg ${d.transitStatus==='Received'?'bg-emerald-500/20 text-emerald-300':d.transitStatus==='In Transit'?'bg-amber-500/20 text-amber-300':d.transitStatus==='Cancelled'?'bg-rose-500/20 text-rose-300':'bg-slate-700 text-slate-300'}">${safe(d.transitStatus)}</span></td><td class="py-3 px-4">${safe(d.transitDate)}</td><td class="py-3 px-4">${safe(d.receivedDate)}</td><td class="py-3 px-4">${safe(d.transitNote)}</td><td class="py-3 px-4">${actionButtons}</td>`;
                 body.appendChild(tr);
             });
             document.getElementById('transitEmpty').classList.toggle('hidden', records.length !== 0);
